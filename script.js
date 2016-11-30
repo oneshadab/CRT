@@ -17,6 +17,16 @@ var sendRequest = function(type, url, callback){
     });
     req.open(type, url);
     req.send();
+};
+
+var sendFile = function(file, type, url, callback){
+    var req = new XMLHttpRequest();
+    req.addEventListener("loadl",function() {
+        callback(this)
+    });
+    req.open(type, url);
+    req.setRequestHeader("Content-Type", "multipart/form-data");
+    req.send(file);
 }
 
 var showPage = function(url){
@@ -31,14 +41,14 @@ var component = function(){
       parent: null,
       innerHTML: "",
       tag: "",
-      attr: [],
+      attr: {},
       children: [],
       content: "",
       render: function(){
           var ret = "";
           ret += "<" + this.tag;
-          for(i in this.attr){
-              ret += " " + this.attr[i].key + "=" + this.attr[i].val;
+          for(key in this.attr){
+              ret += " " + key + "=" + "\"" + this.attr[key] + "\"";
           }
           ret += ">";
           for(i in this.children){
@@ -79,7 +89,7 @@ var component = function(){
 var Photo = function(url){
     var obj = component();
     obj.tag = "img";
-    obj.attr.push({key: "src", val: url});
+    obj.attr = {"src" : url};
     return obj;
 };
 
@@ -98,7 +108,8 @@ var PhotoStream = function(photoList){
     obj.updateStream = function () {
         var callback = function(res){
             var photoURLList = JSON.parse(res.responseText);
-            var photoList = photoURLList.map((url) => Photo(url));
+            var photoList = photoURLList.map((url) => Photo(url + "#" + new Date().getTime()));
+            console.log(photoList);
             obj.reset();
             obj.insertAll(photoList);
             obj.update();
@@ -125,9 +136,53 @@ var getRootNode = function(){
     return obj;
 };
 
-var FileUpload = function(){
+var UploadForm = function(){
+
+    var obj = component();
+    obj.tag="form";
+    obj.attr = {
+        "action" : "handleRequest.php",
+        "method" : "POST",
+        "enctype" : "multipart/form-data",
+        "target" : "skipFrame",
+    };
+    var diag = (function(){
+        var obj = component();
+        obj.tag = "input";
+        obj.attr = {
+            "type" : "file",
+            "name" : "photo"
+        };
+        return obj;
+    })();
+    var button = (function(){
+        var obj = component();
+        obj.tag = "input";
+        obj.attr = {
+            "type": "submit",
+            "value": "UploadFile",
+            "name": "submit"
+        };
+        return obj;
+    })();
+    var tempName = (function(){
+        var obj = component()
+        obj.tag = "input";
+        obj.attr = {
+            "type" : "hidden",
+            "name" : "name",
+            "value" : "uploadPhoto"
+
+        };
+        return obj;
+    })();
+    obj.insert(diag);
+    obj.insert(button);
+    obj.insert(tempName);
+    return obj;
 
 };
+
 
 var main = function(){
     //getPage("index.php");
@@ -135,6 +190,10 @@ var main = function(){
     root = getRootNode();
     root.insert(Paragraph("Hello World"));
     root.insert(stream);
-    root.render();
     stream.updateStream();
+    diag = UploadForm();
+    console.log(diag.render());
+    root.insert(diag);
+    root.render();
+
 };

@@ -5,6 +5,7 @@
 </head>
 
 <body onload="main()">
+    <iframe name="skipFrame" style="display:;"></iframe>
     <div id="root">
 
     </div>
