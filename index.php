@@ -1,6 +1,7 @@
 <html>
 
 <head>
+    <script src="CRT.js" type="text/javascript"></script>
     <script src="script.js" type="text/javascript"></script>
 </head>
 
