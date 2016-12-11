@@ -1,15 +1,12 @@
 
-
 var main = function(){
-    //getPage("index.php");
-    stream = PhotoStream([]);
     root = getRootNode();
-    root.insert(Paragraph("Hello World"));
+    SBox = SessionBox();
+    stream = PhotoStream();
+    root.insert(SBox);
+    root.insert(UploadForm());
     root.insert(stream);
-    stream.updateStream();
-    diag = UploadForm();
-    console.log(diag.render());
-    root.insert(diag);
     root.render();
-
+    SBox.checkLogin();
+    stream.updateStream();
 };
