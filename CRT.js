@@ -303,6 +303,7 @@ var LoginForm  = function(){
         };
         return obj;
     })();
+
     obj.insert(email);
     obj.insert(password);
     obj.insert(loginButton);
@@ -426,6 +427,89 @@ var LoginFloatBox = function () {
     return obj;
 };
 
+var SettingsForm  = function(){
+    var obj = component();
+    obj.tag = "form";
+    obj.attr = {
+        "action" : "handleRequest.php",
+        "method" : "POST",
+        "enctype" : "multipart/form-data",
+        "target" : "skipFrame",
+    };
+    var name = (function(){
+        var obj = component();
+        obj.tag = "input";
+        obj.attr = {
+            "type" : "text",
+            "placeholder" : "name",
+            "name" : "name",
+        }
+        return obj;
+    })();
+    var email = (function(){
+        var obj = component();
+        obj.tag = "input";
+        obj.attr = {
+            "type" : "text",
+            "placeholder" : "email",
+            "name" : "email"
+        };
+        return obj;
+    })();
+    var password = (function(){
+        var obj = component();
+        obj.tag = "input";
+        obj.attr = {
+            "type" : "password",
+            "placeholder" : "password",
+            "name" : "password"
+        }
+        return obj;
+    })();
+    var temp = (function(){
+        var obj = component();
+        obj.tag = "input";
+        obj.attr = {
+            "type" : "hidden",
+            "name" : "methodName",
+            "value" : "alterUser",
+        };
+        return obj;
+    })();
+    var updateButton = (function(){
+        var obj = component();
+        obj.tag = "input";
+        obj.attr = {
+            "type" : "submit",
+            "value" : "Update",
+            "name" : "UpdateSettingsButton",
+            "onclick" : "SBox.checkLogin();"
+        };
+        return obj;
+    })();
+    obj.updateUserData = function(){
+        sendRequest("GET", formatRequest({
+            "methodName": "checkLogin"
+        }), function (res) {
+            var user = JSON.parse(res.responseText);
+            if (user.logged_in == "yes") {
+                name.attr["value"] = user.name;
+                email.attr["value"] = user.email;
+                password.attr["value"] = user.pass;
+                root.render();
+            }
+        });
+    };
+    obj.addUpdate(obj.updateUserData);
+    obj.insert(name);
+    obj.insert(email);
+    obj.insert(password);
+    obj.insert(updateButton);
+    obj.insert(temp);
+    obj.update();
+    return obj;
+};
+
 var SettingsBoxFloatSingleton = function () {
     var inner_obj = null;
     var removeButton = function () {
@@ -460,8 +544,10 @@ var SettingsBoxFloatSingleton = function () {
         obj.attr["style"] += "border-width: 5px; border-style: solid; border-radius: 2px;";
         obj.attr["onMouseOver"] = 'this.getElementsByClassName("removeButton")[0].style["display"] = "block";';
         obj.attr["onMouseOut"] = 'this.getElementsByClassName("removeButton")[0].style["display"] = "none";';
-
-
+        var avatarForm = UploadForm();
+        console.log(avatarForm.children[2].attr["value"]="changeAvatar");
+        obj.insert(avatarForm);
+        obj.insert(SettingsForm());
         inner_obj = obj;
         return inner_obj;
     }
@@ -634,8 +720,9 @@ var PhotoBox = function (x) {
     return obj;
 }
 
-var Container = function () {
+var Container = function (x) {
     var obj = component();
     obj.tag = "div";
+    obj.insert(x);
     return obj;
 }

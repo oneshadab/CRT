@@ -26,7 +26,8 @@
             $sql = sprintf("
                 SELECT photo_id
                 FROM photoOwner
-                WHERE user_id=%s;
+                WHERE user_id=%s
+                ORDER BY photo_id DESC;
             ", $_SESSION['user_id']);
             $result = $db->query($sql);
             while($row = $result->fetch_assoc()){
@@ -39,7 +40,7 @@
     function uploadPhoto(){
         if(isset($_SESSION['user_id'])) {
             $src = $_FILES["photo"]["tmp_name"];
-            if(getimagesize($src) === false) return;
+            if(getimagesize($src) === false) return false;
             $db = get_db();
             $sql = sprintf("
               INSERT INTO PHOTOS()
@@ -55,12 +56,18 @@
             $result = $db->query($sql);
             $target = $photo_id . ".jpg";
             move_uploaded_file($src, $target);
+            return $photo_id;
         }
+        return false;
     }
 
     function get_db(){
         $db = new mysqli("localhost", "CRT_USER", "1234", "CRT_DB");
         return $db;
+    }
+
+    function getAdminID(){
+        return 0;
     }
 
     function checkLogin()
@@ -80,6 +87,8 @@
             if(!empty($row)){
                 $ar['logged_in'] = "yes";
                 $ar['name'] = $row['name'];
+                $ar['email'] = $row['email'];
+                $ar['pass'] = $row['pass'];
                 $ar['avatar'] = $row['avatar'] . '.jpg';
             }
         }
@@ -135,26 +144,32 @@
         checkLogin();
     }
 
-    function changeName(){
-        if(isset($_SESSION['user_id']) && isset($_POST['new_name'])){
-            $new_name = $_POST['new_name'];
+    function alterUser(){
+        if(isset($_SESSION['user_id'])){
             $db = get_db();
             $sql = sprintf("
                 UPDATE users
-                SET name=%s
+                SET name='%s',email='%s',pass='%s'
                 WHERE id=%d
-            ", $_POST['new_name'], $_SESSION['user_id']);
+            ", $_POST['name'], $_POST['email'], $_POST['password'], $_SESSION['user_id']);
             $result = $db->query($sql);
-
         }
     }
 
     function changeAvatar(){
         if(isset($_SESSION['user_id'])){
-            uploadPhoto();
+            $user_id = $_SESSION['user_id'];
+            $_SESSION['user_id'] = getAdminID();
+            $photo_id = uploadPhoto();
+            $_SESSION['user_id'] = $user_id;
+            if($photo_id == false) return false;
             $db = get_db();
-            $photo_id = $db->insert_id;
-
+            $sql = sprintf("
+                UPDATE users
+                SET avatar='%d'
+                WHERE id=%d
+            ", $photo_id, $_SESSION['user_id']);
+            $result = $db->query($sql);
         }
     }
 ?>
