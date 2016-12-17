@@ -80,6 +80,7 @@
             if(!empty($row)){
                 $ar['logged_in'] = "yes";
                 $ar['name'] = $row['name'];
+                $ar['avatar'] = $row['avatar'] . '.jpg';
             }
         }
         echo (json_encode($ar));
@@ -128,9 +129,32 @@
                 $_SESSION['user_id'] = $db->insert_id;
             }
             else{
-                echo("email already exists!");
+                echo("email already registered!");
             }
         }
         checkLogin();
+    }
+
+    function changeName(){
+        if(isset($_SESSION['user_id']) && isset($_POST['new_name'])){
+            $new_name = $_POST['new_name'];
+            $db = get_db();
+            $sql = sprintf("
+                UPDATE users
+                SET name=%s
+                WHERE id=%d
+            ", $_POST['new_name'], $_SESSION['user_id']);
+            $result = $db->query($sql);
+
+        }
+    }
+
+    function changeAvatar(){
+        if(isset($_SESSION['user_id'])){
+            uploadPhoto();
+            $db = get_db();
+            $photo_id = $db->insert_id;
+
+        }
     }
 ?>

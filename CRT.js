@@ -1,3 +1,17 @@
+var events = [];
+
+var addEventListener = function (trigger, callback){
+
+    events[trigger] = callback;
+}
+
+
+var triggerEvent = function (call) {;
+    if(call in events) {
+        events[call]();
+    }
+}
+
 var sendRequestWait = function(type, url, callback){
     var done = false;
     sendRequest(type, url, function(res){
@@ -91,9 +105,34 @@ var component = function(){
         },
         addUpdate: function(x){
             this.updateList.push(x);
+        },
+        remove: function(x){
+            var idx = this.children.indexOf(x);
+            if(idx > -1){
+                this.children.splice(idx, 1);
+            }
         }
     };
 };
+
+var CenterFloatObject = function (){
+    var obj = component();
+    obj.tag = "div";
+
+    obj.attr["style"] =
+        "position: fixed; " +
+        "z-index: 999;" +
+        "width: 500px;" +
+        "height: 200px;" +
+        "top: 50%;" +
+        "left: 50%;" +
+        "margin-top: -300px;" +
+        "margin-left: -250px;" +
+        "background-color: white;" +
+        "";
+
+    return obj;
+}
 
 var Photo = function(url){
     var obj = component();
@@ -124,10 +163,9 @@ var PhotoStream = function(photoHeight = "auto", photoWidth = "100%"){
                 var photo = Photo(url + "#" + new Date().getTime());
                 photo.attr["height"] = photoHeight;
                 photo.attr["width"] = photoWidth;
-                photo.attr["style"] = "border-style: solid; border-width: 5px;margin: 10px;"
-                return photo;
+                return PhotoBox(photo);
             });
-            console.log(photoList);
+            //console.log(photoList);
             obj.reset();
             obj.insertAll(photoList);
             root.render();
@@ -344,12 +382,95 @@ var RegisterForm  = function(){
 var LoginBox = function(){
     var obj = component();
     obj.tag = "div";
+    var btn = Button("Login/Register", function(){
+        var box = LoginFloatBox();
+        box.attr["style"] += "border-width:5px; border-style: solid;";
+        root.insert(box);
+        root.render();
+    });
+    btn.attr["style"] = "float: right;";
+    obj.insert(btn);
+    return obj;
+};
+
+var LoginFloatBox = function () {
+    var obj = CenterFloatObject();
+    var removeButton = function () {
+        var obj = Photo("removeButton.png");
+        obj.attr["style"] = "" +
+            "height: 30px;" +
+            "width: 30px;" +
+            "display: none;" +
+            "position: absolute;" +
+            "left: 97%;" +
+            "top: -4%;";
+        obj.attr['class'] = "removeButton";
+        obj.attr["onclick"] = 'triggerEvent("LoginBoxClose")';
+        obj.attr["onMouseOver"] = 'this.style["display"] = "block";';
+        obj.attr["onMouseOut"] = 'this.style["display"] = "none";';
+        return obj;
+    }();
+    obj.attr["onMouseOver"] = 'this.getElementsByClassName("removeButton")[0].style["display"] = "block";';
+    obj.attr["onMouseOut"] = 'this.getElementsByClassName("removeButton")[0].style["display"] = "none";';
+    obj.attr["style"] += "height:  400px;";
+    obj.attr["style"] += "margin-top: -250px;";
+    obj.insert(removeButton);
     obj.insert(LoginForm());
     obj.insert(RegisterForm());
+    addEventListener("LoginBoxClose", function () {
+        //console.log(obj);
+        root.remove(obj);
+        root.render();
+    });
+
     return obj;
+};
+
+var SettingsBoxFloatSingleton = function () {
+    var inner_obj = null;
+    var removeButton = function () {
+        var obj = Photo("removeButton.png");
+        obj.attr["style"] = "" +
+            "height: 30px;" +
+            "width: 30px;" +
+            "display: none;" +
+            "position: absolute;" +
+            "left: 97%;" +
+            "top: -4%;";
+        obj.attr['class'] = "removeButton";
+        obj.attr["onclick"] = 'triggerEvent("SettingsBoxClose")';
+        obj.attr["onMouseOver"] = 'this.style["display"] = "block";';
+        obj.attr["onMouseOut"] = 'this.style["display"] = "none";';
+        return obj;
+    }();
+
+    var removeSettingsBox = function () {
+        if(inner_obj != null) root.remove(inner_obj);
+        root.render();
+    };
+    addEventListener("SettingsBoxClose", removeSettingsBox);
+
+
+    return function () {
+        removeSettingsBox();
+        var obj = CenterFloatObject();
+        obj.insert(removeButton);
+        obj.attr["style"] += "height: 400px;";
+        obj.attr["style"] += "margin-top: -250px;";
+        obj.attr["style"] += "border-width: 5px; border-style: solid; border-radius: 2px;";
+        obj.attr["onMouseOver"] = 'this.getElementsByClassName("removeButton")[0].style["display"] = "block";';
+        obj.attr["onMouseOut"] = 'this.getElementsByClassName("removeButton")[0].style["display"] = "none";';
+
+
+        inner_obj = obj;
+        return inner_obj;
+    }
 }
 
-var ProfileBox = function(name) {
+var SettingsBoxFloat = SettingsBoxFloatSingleton();
+
+
+var ProfileBox = function(name, avatar) {
     var obj = component();
     obj.tag = "form";
     obj.attr = {
@@ -359,7 +480,7 @@ var ProfileBox = function(name) {
         "target" : "skipFrame",
     };
     var profilePicture = (function () {
-        var obj = Photo("test_pro_pic.jpg");
+        var obj = Photo(avatar);
         obj.attr["height"] = "48";
         obj.attr["width"] = "48";
         return obj;
@@ -394,11 +515,23 @@ var ProfileBox = function(name) {
         };
         return obj;
     })();
-
+    var settingsButton = (function(){
+        var func = function(){
+            root.insert(SettingsBoxFloat());
+            root.render();
+        };
+        var btn = Button("Settings", func);
+        btn.attr['type'] = "button";
+        btn.attr["style"] = "" +
+            "float: right;" +
+            "";
+        return btn;
+    })();
     obj.insert(profilePicture);
     obj.insert(profileName);
     obj.insert(temp);
     obj.insert(logoutButton);
+    obj.insert(settingsButton);
     return obj;
 };
 
@@ -413,12 +546,14 @@ var SessionBox = function () {
             //console.log(user);
             if (user.logged_in == "yes") {
                 obj.reset();
-                var userBox = ProfileBox(user.name);
+                var userBox = ProfileBox(user.name, user.avatar);
                 obj.insert(userBox);
+                obj.insert(UploadForm());
                 root.update();
             }
             else {
                 obj.reset();
+                triggerEvent("LoginBoxClose");
                 var guestBox = LoginBox();
                 obj.insert(guestBox);
                 root.update();
@@ -427,3 +562,80 @@ var SessionBox = function () {
     };
     return obj;
 };
+
+
+
+var tempFloatObject = function () {
+    var obj = CenterFloatObject();
+    obj.insert(new Paragraph("hello World"));
+    return obj;
+}
+
+
+var TranslucentContainer = function () {
+
+}
+
+var PhotoFrameFloatSingleton = function () {
+    var inner_obj = null;
+    var removeButton = function () {
+        var obj = Photo("removeButton.png");
+        obj.attr["style"] = "" +
+            "height: 30px;" +
+            "width: 30px;" +
+            "display: none;" +
+            "position: absolute;" +
+            "left: 97%;" +
+            "top: -6%;";
+        obj.attr['class'] = "removeButton";
+        obj.attr["onclick"] = 'triggerEvent("PhotoFrameClose")';
+        obj.attr["onMouseOver"] = 'this.style["display"] = "block";';
+        obj.attr["onMouseOut"] = 'this.style["display"] = "none";';
+        return obj;
+    }();
+
+    var removePhotoFrame = function () {
+        if(inner_obj != null) root.remove(inner_obj);
+        root.render();
+    };
+    addEventListener("PhotoFrameClose", removePhotoFrame);
+
+    return function (url) {
+        removePhotoFrame();
+        var obj = CenterFloatObject();
+        var photo = Photo(url);
+        photo.attr["width"] = "500px";
+        photo.attr["height"] = "auto";
+        photo.attr["style"] += "float: left;";
+        obj.insert(removeButton);
+        obj.insert(photo);
+        obj.attr["onMouseOver"] = 'this.getElementsByClassName("removeButton")[0].style["display"] = "block";';
+        obj.attr["onMouseOut"] = 'this.getElementsByClassName("removeButton")[0].style["display"] = "none";';
+        inner_obj = obj;
+        return inner_obj;
+    }
+}
+
+var PhotoFrameFloat = PhotoFrameFloatSingleton();
+
+var getElem = function (x) {
+    return document.getElementById(x);
+}
+
+var PhotoBox = function (x) {
+    var obj = component();
+    obj.tag = "div";
+    var photo = x;
+    photo.attr["id"] = photo.attr["src"];
+    obj.insert(photo);
+    obj.attr["style"] = "border-style: solid; border-width: 5px;margin: 10px;";
+    var clickText = 'root.insert(PhotoFrameFloat("' + photo.attr["src"] + '"));root.render();';
+    obj.attr["onClick"] = clickText;
+    return obj;
+}
+
+var Container = function () {
+    var obj = component();
+    obj.tag = "div";
+    return obj;
+}
