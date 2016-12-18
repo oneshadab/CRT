@@ -154,7 +154,7 @@ var PhotoStream = function(photoHeight = "auto", photoWidth = "100%"){
     var sup = obj;
     obj.tag = "div";
     obj.attr = { // Temporary styles
-        "style" : "width: 100%;"
+        "style" : "margin: 100 auto; width: 50%;"
     };
     obj.updateStream = function () {
         var callback = function (res) {
@@ -201,13 +201,19 @@ var UploadForm = function(){
         "method" : "POST",
         "enctype" : "multipart/form-data",
         "target" : "skipFrame",
+        "style" : "" +
+        "" +
+        "margin: 10 auto;" +
+        "top: 100px; " +
+        "width: 50%;",
     };
     var diag = (function(){
         var obj = component();
         obj.tag = "input";
         obj.attr = {
             "type" : "file",
-            "name" : "photo"
+            "name" : "photo",
+            "style" : "float:left"
         };
         return obj;
     })();
@@ -219,6 +225,7 @@ var UploadForm = function(){
             "value": "Upload Photo",
             "name": "submit",
             "onclick" :"root.update();",
+            "style" : "float: right;"
         };
         return obj;
     })();
@@ -545,7 +552,8 @@ var SettingsBoxFloatSingleton = function () {
         obj.attr["onMouseOver"] = 'this.getElementsByClassName("removeButton")[0].style["display"] = "block";';
         obj.attr["onMouseOut"] = 'this.getElementsByClassName("removeButton")[0].style["display"] = "none";';
         var avatarForm = UploadForm();
-        console.log(avatarForm.children[2].attr["value"]="changeAvatar");
+        avatarForm.children[2].attr["value"]="changeAvatar";
+        avatarForm.attr["style"] = "";
         obj.insert(avatarForm);
         obj.insert(SettingsForm());
         inner_obj = obj;
@@ -564,19 +572,29 @@ var ProfileBox = function(name, avatar) {
         "method" : "POST",
         "enctype" : "multipart/form-data",
         "target" : "skipFrame",
+        "style" : "margin-bottom: 0px;"
     };
     var profilePicture = (function () {
         var obj = Photo(avatar);
-        obj.attr["height"] = "48";
-        obj.attr["width"] = "48";
+        obj.attr["height"] = "64";
+        obj.attr["width"] = "64";
+        obj.attr["style"] ="" +
+            "border-radius: 50%;";
         return obj;
     })();
     var profileName = (function () {
         var obj = component();
-        obj.tag = "label";
+        obj.tag = "h1";
         obj.content = name;
         obj.attr = {
-            "style" : "margin-left: 5px; margin-bottom: 10px;",
+            "href" : "index.php",
+            "style" : "" +
+            "margin-left: 10px; " +
+            "padding-top: 10px;" +
+            "display:inline; " +
+            "vertical-align: top;" +
+            "" +
+            "font-family: sans-serif;",
         }
         return obj;
     })();
@@ -624,6 +642,16 @@ var ProfileBox = function(name, avatar) {
 var SessionBox = function () {
     var obj = component();
     obj.tag = "div";
+    obj.attr["style"] = "" +
+        "" +
+        "margin: 0 auto;" +
+        "width: 75%; " +
+        "background: ;" +
+        "top: -50%;" +
+        "border-width: 5px;" +
+        "border-radius: 5px;" +
+        "border-style: ;" +
+        "margin-bottom: 0px;";
     obj.checkLogin = function() {
         sendRequest("GET", formatRequest({
             "methodName": "checkLogin"
@@ -634,7 +662,6 @@ var SessionBox = function () {
                 obj.reset();
                 var userBox = ProfileBox(user.name, user.avatar);
                 obj.insert(userBox);
-                obj.insert(UploadForm());
                 root.update();
             }
             else {
@@ -671,8 +698,8 @@ var PhotoFrameFloatSingleton = function () {
             "width: 30px;" +
             "display: none;" +
             "position: absolute;" +
-            "left: 97%;" +
-            "top: -6%;";
+            "left: 98%;" +
+            "top: -5%;";
         obj.attr['class'] = "removeButton";
         obj.attr["onclick"] = 'triggerEvent("PhotoFrameClose")';
         obj.attr["onMouseOver"] = 'this.style["display"] = "block";';
@@ -692,7 +719,7 @@ var PhotoFrameFloatSingleton = function () {
         var photo = Photo(url);
         photo.attr["width"] = "500px";
         photo.attr["height"] = "auto";
-        photo.attr["style"] += "float: left;";
+        photo.attr["style"] += "float: left;border-width: 5px; border-style: solid;";
         obj.insert(removeButton);
         obj.insert(photo);
         obj.attr["onMouseOver"] = 'this.getElementsByClassName("removeButton")[0].style["display"] = "block";';
