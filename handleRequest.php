@@ -24,15 +24,21 @@
         if(isset($_SESSION['user_id'])){
             $db = get_db();
             $sql = sprintf("
-                SELECT photo_id
-                FROM photoOwner
+                SELECT *
+                FROM photoowner JOIN users ON (photoowner.user_id = users.id)
                 WHERE user_id=%s
                 ORDER BY photo_id DESC;
             ", $_SESSION['user_id']);
             $result = $db->query($sql);
+            $list = [];
             while($row = $result->fetch_assoc()){
-                $ar[] = $row['photo_id'] . ".jpg";
+                $elem = [];
+                $elem['avatar'] = $row['avatar'] . ".jpg";
+                $elem['name'] = $row['name'];
+                $elem['url'] = $row['photo_id'] . ".jpg";
+                $list[] = $elem;
             }
+            $ar['photo_list'] = $list;
         }
         echo(json_encode($ar));
     }

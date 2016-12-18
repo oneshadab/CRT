@@ -158,12 +158,32 @@ var PhotoStream = function(photoHeight = "auto", photoWidth = "100%"){
     };
     obj.updateStream = function () {
         var callback = function (res) {
-            var photoURLList = JSON.parse(res.responseText);
-            var photoList = photoURLList.map((url) => {
-                var photo = Photo(url + "#" + new Date().getTime());
+            var resJSON = JSON.parse(res.responseText);
+            console.log(resJSON);
+            var photoURLList = resJSON["photo_list"];
+            var photoList = photoURLList.map((elem) => {
+                var photo = Photo(elem.url + "#" + new Date().getTime());
                 photo.attr["height"] = photoHeight;
                 photo.attr["width"] = photoWidth;
-                return PhotoBox(photo);
+                var avatar = Photo(elem.avatar);
+                avatar.attr["height"] = "32";
+                avatar.attr["width"] = "32";
+                avatar.attr["style"] = "" +
+                    "display: inline;" +
+                    "border-radius: 50%;" +
+                    "margin: 15px;" +
+                    "";
+                var name = (function () {
+                    var obj = component();
+                    obj.tag = "div";
+                    obj.content = elem.name;
+                    obj.attr["style"] ="" +
+                        "display: none;" +
+                        "align-items: center;" +
+                        "vertical-align: middle;";
+                    return obj;
+                })();
+                return PhotoBox(avatar, name, photo);
             });
             //console.log(photoList);
             obj.reset();
@@ -625,6 +645,19 @@ var ProfileBox = function(name, avatar) {
         };
         return obj;
     })();
+    var followButton = (function () {
+        var btn = Button("Follow", function () {
+
+        });
+        btn.attr['type'] = "button";
+        btn.attr["style"] = "" +
+            "position: relative;" +
+            "bottom: 20%;" +
+            "left: -13.7%;" +
+            "width: 100px;" +
+            "";
+        return btn;
+    })();
     var settingsButton = (function(){
         var func = function(){
             root.insert(SettingsBoxFloat());
@@ -639,6 +672,7 @@ var ProfileBox = function(name, avatar) {
     })();
     obj.insert(profilePicture);
     obj.insert(profileName);
+    obj.insert(followButton);
     obj.insert(temp);
     obj.insert(logoutButton);
     obj.insert(settingsButton);
@@ -770,17 +804,23 @@ var getElem = function (x) {
     return document.getElementById(x);
 }
 
-var PhotoBox = function (x) {
+var PhotoBox = function (_avatar, _name, _photo) {
     var obj = component();
     obj.tag = "div";
-    var photo = x;
+    var photo = _photo;
+    var name = _name;
+    var avatar = _avatar;
     photo.attr["id"] = photo.attr["src"];
+    obj.insert(avatar);
+    obj.insert(name);
     obj.insert(photo);
     obj.attr["style"] = "" +
         "border-style: solid; " +
         "border-width: 2px;" +
-        "border-color: 	#dbdbdb;" +
-        "margin: 10px;";
+        "border-color: 	#efefef;" +
+        "margin: 10px;" +
+        "margin-bottom: 50px;" +
+        "background-color: 	white;";
     var clickText = 'root.insert(PhotoFrameFloat("' + photo.attr["src"] + '"));root.render();';
     obj.attr["onClick"] = clickText;
     return obj;
