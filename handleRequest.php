@@ -172,4 +172,33 @@
             $result = $db->query($sql);
         }
     }
+
+    function deletePhoto(){
+        if(isset($_SESSION['user_id']) && isset($_GET['photo_id'])){
+            $db = get_db();
+            $sql = sprintf("
+                SELECT * 
+                FROM photoOwner
+                WHERE photo_id=%s
+            ", $_GET['photo_id']);
+            $result = $db->query($sql);
+            $row = $result->fetch_assoc();
+            print_r($row);
+
+            if($row && $row['user_id'] == $_SESSION['user_id']){
+                $sql = sprintf("
+                    DELETE 
+                    FROM photoOwner
+                    WHERE photo_id=%s
+                ", $_GET['photo_id']);
+                $result = $db->query($sql);
+                $sql = sprintf("
+                    DELETE 
+                    FROM photoOwner
+                    WHERE id=%s
+                ", $_GET['photo_id']);
+                $result = $db->query($sql);
+            }
+        }
+    }
 ?>

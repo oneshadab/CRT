@@ -144,7 +144,7 @@ var Photo = function(url){
 var formatRequest = function(list){
     var head = "handleRequest.php?";
     for(key in list){
-        head += key + "=" + list[key];
+        head += "&" + key + "=" + list[key];
     }
     return head;
 };
@@ -205,7 +205,7 @@ var UploadForm = function(){
         "" +
         "margin: 10 auto;" +
         "top: 100px; " +
-        "width: 50%;",
+        "width: 75%;",
     };
     var diag = (function(){
         var obj = component();
@@ -652,6 +652,7 @@ var SessionBox = function () {
         "border-radius: 5px;" +
         "border-style: ;" +
         "margin-bottom: 0px;";
+    
     obj.checkLogin = function() {
         sendRequest("GET", formatRequest({
             "methodName": "checkLogin"
@@ -662,6 +663,7 @@ var SessionBox = function () {
                 obj.reset();
                 var userBox = ProfileBox(user.name, user.avatar);
                 obj.insert(userBox);
+                obj.insert(UploadForm());
                 root.update();
             }
             else {
@@ -690,6 +692,7 @@ var TranslucentContainer = function () {
 }
 
 var PhotoFrameFloatSingleton = function () {
+    var url = "";
     var inner_obj = null;
     var removeButton = function () {
         var obj = Photo("removeButton.png");
@@ -706,15 +709,37 @@ var PhotoFrameFloatSingleton = function () {
         obj.attr["onMouseOut"] = 'this.style["display"] = "none";';
         return obj;
     }();
-
     var removePhotoFrame = function () {
         if(inner_obj != null) root.remove(inner_obj);
         root.render();
     };
+    var deleteButton = (function () {
+        addEventListener("DeletePhoto", function () {
+            var photoID = url.split('.')[0];
+            var callback = function (res) {
+                console.log(res.responseText);
+                removePhotoFrame();
+                stream.updateStream();
+                root.render();
+            };
+            var req = formatRequest({
+               "methodName" : "deletePhoto",
+                "photo_id" : photoID,
+            });
+            sendRequest("GET", req, callback);
+        });
+        var obj = Button("Delete", function () {
+            triggerEvent("DeletePhoto");
+        });
+        return obj;
+    })();
+
+
     addEventListener("PhotoFrameClose", removePhotoFrame);
 
-    return function (url) {
+    return function (_url) {
         removePhotoFrame();
+        url = _url;
         var obj = CenterFloatObject();
         var photo = Photo(url);
         photo.attr["width"] = "500px";
@@ -722,6 +747,7 @@ var PhotoFrameFloatSingleton = function () {
         photo.attr["style"] += "float: left;border-width: 5px; border-style: solid;";
         obj.insert(removeButton);
         obj.insert(photo);
+        obj.insert(deleteButton);
         obj.attr["onMouseOver"] = 'this.getElementsByClassName("removeButton")[0].style["display"] = "block";';
         obj.attr["onMouseOut"] = 'this.getElementsByClassName("removeButton")[0].style["display"] = "none";';
         inner_obj = obj;
