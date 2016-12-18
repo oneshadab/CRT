@@ -202,10 +202,10 @@ var UploadForm = function(){
         "enctype" : "multipart/form-data",
         "target" : "skipFrame",
         "style" : "" +
-        "" +
-        "margin: 10 auto;" +
+        "height: 10px" +
+        "margin: 0 auto;" +
         "top: 100px; " +
-        "width: 75%;",
+        "",
     };
     var diag = (function(){
         var obj = component();
@@ -213,7 +213,7 @@ var UploadForm = function(){
         obj.attr = {
             "type" : "file",
             "name" : "photo",
-            "style" : "float:left"
+            "style" : "float:right;"
         };
         return obj;
     })();
@@ -240,8 +240,8 @@ var UploadForm = function(){
         };
         return obj;
     })();
-    obj.insert(diag);
     obj.insert(button);
+    obj.insert(diag);
     obj.insert(tempName);
     return obj;
 
@@ -390,13 +390,19 @@ var RegisterForm  = function(){
 var LoginBox = function(){
     var obj = component();
     obj.tag = "div";
+    obj.attr["style"] = "" +
+        "overflow: hidden;";
     var btn = Button("Login/Register", function(){
         var box = LoginFloatBox();
-        box.attr["style"] += "border-width:5px; border-style: solid;";
+        box.attr["style"] += "" +
+            "border-width:5px; " +
+            "border-style: solid;";
         root.insert(box);
         root.render();
     });
-    btn.attr["style"] = "float: right;";
+    btn.attr["style"] = "" +
+        "float: right;" +
+        "";
     obj.insert(btn);
     return obj;
 };
@@ -643,15 +649,18 @@ var SessionBox = function () {
     var obj = component();
     obj.tag = "div";
     obj.attr["style"] = "" +
-        "" +
+        "padding: 10px;" +
         "margin: 0 auto;" +
         "width: 75%; " +
-        "background: ;" +
+        "background: white;" +
         "top: -50%;" +
-        "border-width: 5px;" +
+        "border-width: 2px;" +
         "border-radius: 5px;" +
-        "border-style: ;" +
-        "margin-bottom: 0px;";
+        "border-style: solid;" +
+        "border-top: 0px;" +
+        "border-color: 	#dbdbdb;" +
+        "margin-bottom: 0px;" +
+        ";";
     
     obj.checkLogin = function() {
         sendRequest("GET", formatRequest({
@@ -767,7 +776,11 @@ var PhotoBox = function (x) {
     var photo = x;
     photo.attr["id"] = photo.attr["src"];
     obj.insert(photo);
-    obj.attr["style"] = "border-style: solid; border-width: 5px;margin: 10px;";
+    obj.attr["style"] = "" +
+        "border-style: solid; " +
+        "border-width: 2px;" +
+        "border-color: 	#dbdbdb;" +
+        "margin: 10px;";
     var clickText = 'root.insert(PhotoFrameFloat("' + photo.attr["src"] + '"));root.render();';
     obj.attr["onClick"] = clickText;
     return obj;
