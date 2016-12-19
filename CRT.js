@@ -157,6 +157,7 @@ var PhotoStream = function(photoHeight = "auto", photoWidth = "100%"){
         "style" : "margin: 100 auto; width: 50%;"
     };
     obj.updateStream = function () {
+        root.render();
         var callback = function (res) {
             var resJSON = JSON.parse(res.responseText);
             console.log(resJSON);
@@ -175,10 +176,11 @@ var PhotoStream = function(photoHeight = "auto", photoWidth = "100%"){
                     "";
                 var name = (function () {
                     var obj = component();
-                    obj.tag = "div";
+                    obj.tag = "h5";
                     obj.content = elem.name;
                     obj.attr["style"] ="" +
-                        "display: none;" +
+                        "display: ;" +
+                        "font-family: sans-serif;" +
                         "align-items: center;" +
                         "vertical-align: middle;";
                     return obj;
@@ -276,17 +278,32 @@ var Button = function(text, callback){
     obj.tag = "button";
     obj.content = text;
     obj.attr = {"onClick" : "(" + callback + ")()"};
+    var tempStyle = "display: block; margin-bottom: 10px; " +
+        "padding: 5px;" +
+        "height: 30px;" +
+        "border-style: solid;" +
+        "border-width: 1px;" +
+        "border-radius: 2px;" +
+        "border-color: #dbdbdb;";
     return obj
 };
 
 var LoginForm  = function(){
     var obj = component();
     obj.tag = "form";
+    var tempStyle = "display: block; margin-bottom: 10px; " +
+        "padding: 5px;" +
+        "height: 30px;" +
+        "border-style: solid;" +
+        "border-width: 1px;" +
+        "border-radius: 2px;" +
+        "border-color: #dbdbdb;";
     obj.attr = {
         "action" : "handleRequest.php",
         "method" : "POST",
         "enctype" : "multipart/form-data",
         "target" : "skipFrame",
+        "style" : "margin: 0px auto; width: 50%;"
     };
     var email = (function(){
         var obj = component();
@@ -294,7 +311,8 @@ var LoginForm  = function(){
         obj.attr = {
             "type" : "text",
             "placeholder" : "email",
-            "name" : "email"
+            "name" : "email",
+            "style" : tempStyle
         };
         return obj;
     })();
@@ -304,7 +322,8 @@ var LoginForm  = function(){
         obj.attr = {
             "type" : "password",
             "placeholder" : "password",
-            "name" : "password"
+            "name" : "password",
+            "style" : tempStyle
         }
         return obj;
     })();
@@ -315,7 +334,8 @@ var LoginForm  = function(){
             "type" : "submit",
             "value" : "Login",
             "name" : "loginButton",
-            "onclick" : "SBox.checkLogin();"
+            "onclick" : "SBox.checkLogin();",
+            "style" : tempStyle
         }
         return obj;
     })();
@@ -340,12 +360,20 @@ var LoginForm  = function(){
 
 var RegisterForm  = function(){
     var obj = component();
+    var tempStyle = "display: block; margin-bottom: 10px; " +
+        "padding: 5px;" +
+        "height: 30px;" +
+        "border-style: solid;" +
+        "border-width: 1px;" +
+        "border-radius: 2px;" +
+        "border-color: #dbdbdb;";
     obj.tag = "form";
     obj.attr = {
         "action" : "handleRequest.php",
         "method" : "POST",
         "enctype" : "multipart/form-data",
         "target" : "skipFrame",
+        "style" : "margin: 0px auto; width: 50%;"
     };
     var name = (function(){
         var obj = component();
@@ -354,6 +382,7 @@ var RegisterForm  = function(){
             "type" : "text",
             "placeholder" : "name",
             "name" : "name",
+            "style" : tempStyle
         }
         return obj;
     })();
@@ -363,7 +392,8 @@ var RegisterForm  = function(){
         obj.attr = {
             "type" : "text",
             "placeholder" : "email",
-            "name" : "email"
+            "name" : "email",
+            "style" : tempStyle
         };
         return obj;
     })();
@@ -373,7 +403,8 @@ var RegisterForm  = function(){
         obj.attr = {
             "type" : "password",
             "placeholder" : "password",
-            "name" : "password"
+            "name" : "password",
+            "style" : tempStyle
         }
         return obj;
     })();
@@ -394,7 +425,8 @@ var RegisterForm  = function(){
             "type" : "submit",
             "value" : "Register",
             "name" : "registerButton",
-            "onclick" : "SBox.checkLogin();"
+            "onclick" : "SBox.checkLogin();",
+            "style" : tempStyle
         }
         return obj;
     })();
@@ -448,8 +480,14 @@ var LoginFloatBox = function () {
     obj.attr["onMouseOut"] = 'this.getElementsByClassName("removeButton")[0].style["display"] = "none";';
     obj.attr["style"] += "height:  400px;";
     obj.attr["style"] += "margin-top: -250px;";
+    obj.attr["style"] += "padding: 20px;";
+    obj.attr["style"] += "padding: 20px;";
+    obj.attr["style"] += "border-width: 2px; border-style: solid; border-radius: 10px; " +
+        "border-color: 	#525252";
     obj.insert(removeButton);
+    obj.insert(Label("Login:"));
     obj.insert(LoginForm());
+    obj.insert(Label("Register:"));
     obj.insert(RegisterForm());
     addEventListener("LoginBoxClose", function () {
         //console.log(obj);
@@ -460,6 +498,23 @@ var LoginFloatBox = function () {
     return obj;
 };
 
+var Label = function (_content) {
+    var obj = component();
+    obj.tag = "label";
+    obj.content = _content;
+    obj.attr['style'] = "" +
+        "font-size: 12px;" +
+        "font-weight: bold;" +
+        "font-family: sans-serif;";
+    return obj;
+}
+
+var LineBreak = function () {
+    var obj = component();
+    obj.tag = "br";
+    return obj;
+}
+
 var SettingsForm  = function(){
     var obj = component();
     obj.tag = "form";
@@ -468,14 +523,25 @@ var SettingsForm  = function(){
         "method" : "POST",
         "enctype" : "multipart/form-data",
         "target" : "skipFrame",
+        "style" : "" +
+            "margin: 10px auto; " +
+            "width: 50%;"
     };
+    var tempStyle = "display: block; margin-bottom: 10px; " +
+        "padding: 5px;" +
+        "height: 30px;" +
+        "border-style: solid;" +
+        "border-width: 1px;" +
+        "border-radius: 2px;" +
+        "border-color: #dbdbdb;";
     var name = (function(){
         var obj = component();
         obj.tag = "input";
         obj.attr = {
             "type" : "text",
             "placeholder" : "name",
-            "name" : "name",
+            "name" : "name" ,
+            "style" : tempStyle,
         }
         return obj;
     })();
@@ -485,7 +551,8 @@ var SettingsForm  = function(){
         obj.attr = {
             "type" : "text",
             "placeholder" : "email",
-            "name" : "email"
+            "name" : "email",
+            "style" : tempStyle,
         };
         return obj;
     })();
@@ -495,7 +562,8 @@ var SettingsForm  = function(){
         obj.attr = {
             "type" : "password",
             "placeholder" : "password",
-            "name" : "password"
+            "name" : "password",
+            "style" : tempStyle,
         }
         return obj;
     })();
@@ -516,7 +584,7 @@ var SettingsForm  = function(){
             "type" : "submit",
             "value" : "Update",
             "name" : "UpdateSettingsButton",
-            "onclick" : "SBox.checkLogin();"
+            "onclick" : "SBox.checkLogin();",
         };
         return obj;
     })();
@@ -534,8 +602,11 @@ var SettingsForm  = function(){
         });
     };
     obj.addUpdate(obj.updateUserData);
+    obj.insert(Label("Name:"));
     obj.insert(name);
+    obj.insert(Label("Email:"));
     obj.insert(email);
+    obj.insert(Label("Password:"))
     obj.insert(password);
     obj.insert(updateButton);
     obj.insert(temp);
@@ -574,12 +645,13 @@ var SettingsBoxFloatSingleton = function () {
         obj.insert(removeButton);
         obj.attr["style"] += "height: 400px;";
         obj.attr["style"] += "margin-top: -250px;";
-        obj.attr["style"] += "border-width: 5px; border-style: solid; border-radius: 2px;";
+        obj.attr["style"] += "border-width: 2px; border-style: solid; border-radius: 10px; " +
+            "border-color: 	#525252";
         obj.attr["onMouseOver"] = 'this.getElementsByClassName("removeButton")[0].style["display"] = "block";';
         obj.attr["onMouseOut"] = 'this.getElementsByClassName("removeButton")[0].style["display"] = "none";';
         var avatarForm = UploadForm();
         avatarForm.children[2].attr["value"]="changeAvatar";
-        avatarForm.attr["style"] = "";
+        avatarForm.attr["style"] += "margin-top: 50px;padding-bottom: 50px; margin-right: 80px;";
         obj.insert(avatarForm);
         obj.insert(SettingsForm());
         inner_obj = obj;
@@ -614,12 +686,13 @@ var ProfileBox = function(name, avatar) {
         obj.content = name;
         obj.attr = {
             "href" : "index.php",
+            "align" : "left",
+            "width" : "20px",
             "style" : "" +
             "margin-left: 10px; " +
             "padding-top: 10px;" +
             "display:inline; " +
             "vertical-align: top;" +
-            "" +
             "font-family: sans-serif;",
         }
         return obj;
@@ -652,10 +725,13 @@ var ProfileBox = function(name, avatar) {
         btn.attr['type'] = "button";
         btn.attr["style"] = "" +
             "position: relative;" +
-            "bottom: 20%;" +
-            "left: -13.7%;" +
+            "float: right;" +
+            "top: 50%;" +
+            "display: inline;" +
             "width: 100px;" +
-            "";
+            "right: 71%;" +
+            "vertical-align:;" +
+            "margin-top: 40px;";
         return btn;
     })();
     var settingsButton = (function(){
@@ -670,12 +746,24 @@ var ProfileBox = function(name, avatar) {
             "";
         return btn;
     })();
+    var profileInfo = (function () {
+        var obj = component();
+        obj.tag = "div";
+        obj.attr["style"] = "" +
+            "display: inline;"
+        obj.insert(profileName);
+        obj.insert(followButton);
+        return obj;
+    })();
+
     obj.insert(profilePicture);
     obj.insert(profileName);
-    obj.insert(followButton);
+
     obj.insert(temp);
     obj.insert(logoutButton);
     obj.insert(settingsButton);
+    obj.insert(followButton);
+
     return obj;
 };
 
@@ -811,8 +899,18 @@ var PhotoBox = function (_avatar, _name, _photo) {
     var name = _name;
     var avatar = _avatar;
     photo.attr["id"] = photo.attr["src"];
-    obj.insert(avatar);
-    obj.insert(name);
+    var userProfile = (function () {
+        var obj = component();
+        obj.tag = "div";
+        obj.insert(avatar);
+        obj.insert(name);
+        obj.attr["style"] = "" +
+            "display: flex;" +
+            "align-items: center;";
+
+        return obj;
+    })();
+    obj.insert(userProfile);
     obj.insert(photo);
     obj.attr["style"] = "" +
         "border-style: solid; " +

@@ -21,6 +21,7 @@
     }
     function getPhotoAll(){
         $ar = [];
+        $ar['photo_list'] = [];
         if(isset($_SESSION['user_id'])){
             $db = get_db();
             $sql = sprintf("
