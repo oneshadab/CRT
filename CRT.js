@@ -295,6 +295,7 @@ var PhotoStream = function(photoHeight = "auto", photoWidth = "100%"){
     };
     obj.setProfileId = function (val) {
         obj.profileID = val;
+        scroll(0, 0);
     }
     obj.updateStream = function () {
         if(obj.profileID == null){
@@ -414,16 +415,26 @@ var PhotoStream = function(photoHeight = "auto", photoWidth = "100%"){
                         var obj = AvatarBox(profileID, "64px", "64px");
                         obj.attr["style"] += "" +
                             "display: inline-flex;" +
-                            ";" +
+                            "margin-bottom: 0px;" +
                             "";
                         obj.nameBox.attr["style"] += "" +
                             "font-size: ;" +
                             "";
                         return obj;
                     })();
+                    var bio = (function () {
+                        var obj = Label("");
+                        obj.attr["style"] += "" +
+                            "display: block;;" +
+                            "font-size: 24px;" +
+                            "margin: 20px;"
+                        return obj;
+                    })();
                     obj.attr["style"] += "margin: 0px auto; display: inline;"
                     obj.insert(avatar);
                     obj.insert(followButton);
+                    obj.insert(bio);
+
                     return obj;
                 })(obj.profileID);
             };
@@ -626,7 +637,7 @@ var LoginForm  = function(){
         "height: 30px;" +
         "border-style: solid;" +
         "border-width: 1px;" +
-        "border-radius: 2px;" +
+        "border-radius: 5px;" +
         "border-color: #dbdbdb;";
     obj.attr = {
         "action" : "handleRequest.php",
@@ -665,7 +676,11 @@ var LoginForm  = function(){
             "value" : "Login",
             "name" : "loginButton",
             "onclick" : 'SBox.checkLogin();',
-            "style" : tempStyle
+            "style" : tempStyle + "" +
+            "font-weight: bold;" +
+            "width: 100px;" +
+            "background-color: #70c050;" +
+            "color: #fff;"
         }
         return obj;
     })();
@@ -695,7 +710,7 @@ var RegisterForm  = function(){
         "height: 30px;" +
         "border-style: solid;" +
         "border-width: 1px;" +
-        "border-radius: 2px;" +
+        "border-radius: 5px;" +
         "border-color: #dbdbdb;";
     obj.tag = "form";
     obj.attr = {
@@ -756,7 +771,11 @@ var RegisterForm  = function(){
             "value" : "Register",
             "name" : "registerButton",
             "onclick" : 'SBox.checkLogin();',
-            "style" : tempStyle
+            "style" : tempStyle + "" +
+            "font-weight: bold;" +
+            "width: 100px;" +
+            "background-color: #70c050;" +
+            "color: #fff;"
         }
         return obj;
     })();
@@ -792,6 +811,7 @@ var LoginBox = function(){
 var LoginFloatBoxSingleton = function () {
     var obj = FrameFloatSingleton();
     addEventTrigger("LoginDone", obj.removeFrame);
+    obj.attr["style"] += "top:  55%;";
     obj.attr["style"] += "height:  400px;";
     obj.attr["style"] += "margin-top: -250px;";
     obj.attr["style"] += "padding: 20px;";
@@ -805,14 +825,14 @@ var LoginFloatBoxSingleton = function () {
     return obj;
 };
 
-var Label = function (_content) {
+var Label = function (_content, _style = "") {
     var obj = component();
     obj.tag = "label";
     obj.content = _content;
     obj.attr['style'] = "" +
         "font-size: 12px;" +
         "font-weight: bold;" +
-        "font-family: sans-serif;";
+        "font-family: sans-serif;" + _style;
     return obj;
 }
 
@@ -831,12 +851,15 @@ var SettingsForm  = function(){
         "enctype" : "multipart/form-data",
         "target" : "skipFrame",
         "style" : "" +
-            "margin: 10px auto; " +
-            "width: 50%;"
+            "position: relative;" +
+            "margin: 0px auto; " +
+            "color: #404040;" +
+            ";"
     };
     var tempStyle = "display: block; margin-bottom: 10px; " +
         "padding: 5px;" +
-        "height: 30px;" +
+        "height: 40px;" +
+        "width: 100%;" +
         "border-style: solid;" +
         "border-width: 1px;" +
         "border-radius: 2px;" +
@@ -885,13 +908,20 @@ var SettingsForm  = function(){
         return obj;
     })();
     var updateButton = (function(){
-        var obj = component();
-        obj.tag = "input";
+        var obj = Button("Update", function () {
+            
+        });
         obj.attr = {
-            "type" : "submit",
-            "value" : "Update",
             "name" : "UpdateSettingsButton",
             "onclick" : "",
+            "style" : tempStyle +
+                "background-color: #082D3F;" +
+                "color: #fff;" +
+                "padding: 8px;" +
+                "border-radius: 5px;" +
+                "width: 100px;" +
+                "float: right;" +
+                "font-weight: bold;",
         };
         return obj;
     })();
@@ -909,11 +939,11 @@ var SettingsForm  = function(){
         });
     };
     obj.addUpdate(obj.updateUserData);
-    obj.insert(Label("Name:"));
+    obj.insert(Label("Name:", "font-size: 16px;"));
     obj.insert(name);
-    obj.insert(Label("Email:"));
+    obj.insert(Label("Email:", "font-size: 16px;"));
     obj.insert(email);
-    obj.insert(Label("Password:"))
+    obj.insert(Label("Password:", "font-size: 16px;"))
     obj.insert(password);
     obj.insert(updateButton);
     obj.insert(temp);
@@ -927,17 +957,43 @@ var SettingsBoxFloatSingleton = function () {
         "height: 400px;" +
         "top: 55%;" +
         "border-style: solid;" +
-        "border-radius: 2px" +
-        "";
+        "border-radius: 2px;" +
+        "padding: 12px;" +
+        "background-color: #FAFAFA;" +
+        "border-width: 1px;" +
+        "color: #404040;";
     var avatarForm = UploadForm();
-    avatarForm.children[2].attr["value"]="changeAvatar";
+    avatarForm.button.attr["value"]="Change";
+    avatarForm.tempName.attr["value"]="changeAvatar";
     avatarForm.attr["style"] += "margin-top: 50px;padding-bottom: 50px; margin: 5px;";
+    var avatarLabel = Label("Profile Picture:");
+    avatarLabel.attr["style"] += "" +
+        "font-size: 16px;" +
+        "";
+    obj.insert(avatarLabel);
     obj.insert(avatarForm);
     obj.insert(SettingsForm());
     return obj;
 }
 
 var ProfileBox = function(name, avatar) {
+    var tempStyle = "display: block; margin-bottom: 10px; " +
+        "position: relative;" +
+        "padding: 5px;" +
+        "height: 30px;" +
+        "border-style: solid;" +
+        "border-width: 0px;" +
+        "border-left-width: 0px;" +
+        "height: 36px;" +
+        "top: -10px;" +
+        "border-radius: 5px;" +
+        "border-color: #fff;" +
+        "color: #fff;" +
+        "background-color: #082D3F;" +
+        "width: 100px;" +
+        "margin: 5px;" +
+        "margin-left: 0px;" +
+        "font-weight: bold;";
     var obj = component();
     obj.tag = "form";
     obj.attr = {
@@ -945,9 +1001,10 @@ var ProfileBox = function(name, avatar) {
         "method" : "POST",
         "enctype" : "multipart/form-data",
         "target" : "skipFrame",
-        "style" : "margin-bottom: 0px;" +
+        "style" : "margin: 0 auto;" +
             "padding-bottom: 10px;" +
-            "height: 16px;"
+            "height: 16px;" +
+            "text-align: center;"
     };
     var profilePicture = (function () {
         var obj = AvatarBox(user.id, 32, 32);
@@ -955,9 +1012,9 @@ var ProfileBox = function(name, avatar) {
             "position: absolute;" +
             "display: inline-flex;" +
             "bottom: -5px;" +
-            "margin: auto;" +
+            "margin-left: 10%;" +
             "left: 0;;" +
-            "width: 100px;" +
+            "width: 110px;" +
             "right: 0;" +
             "";
         return obj;
@@ -995,7 +1052,12 @@ var ProfileBox = function(name, avatar) {
         obj.attr = {
             "type" : "submit",
             "value" : "Logout",
-            "style" : "float:right;",
+            "style" : tempStyle +
+                "float:right;" +
+                "width: 100px;" +
+                "background-color: #D9534F;" +
+                "margin-left: 10px;" +
+            "border-right-width: 0px;",
             "onClick" : "SBox.checkLogin();"
         };
         return obj;
@@ -1008,7 +1070,7 @@ var ProfileBox = function(name, avatar) {
         };
         var btn = Button("Settings", func);
         btn.attr['type'] = "button";
-        btn.attr["style"] = "" +
+        btn.attr["style"] = tempStyle +
             "float: right;" +
             "";
         return btn;
@@ -1016,7 +1078,7 @@ var ProfileBox = function(name, avatar) {
     var profileInfo = (function () {
         var obj = component();
         obj.tag = "div";
-        obj.attr["style"] = "" +
+        obj.attr["style"] = tempStyle +
             "display: inline;"
         obj.insert(profileName);
         return obj;
@@ -1027,7 +1089,7 @@ var ProfileBox = function(name, avatar) {
             root.render();
         });
         btn.attr["type"] = "button";
-        btn.attr["style"] += "" +
+        btn.attr["style"] += tempStyle +
             "float: right;" +
             "";
         return btn;
@@ -1038,19 +1100,55 @@ var ProfileBox = function(name, avatar) {
             stream.updateStream();
         });
         btn.attr["type"] = "button";
-        btn.attr["style"] += "" +
-            "float: right;" +
+        btn.attr["style"] += tempStyle +
+            "float: left;" +
             "";
         return btn;
     })();
+    var uploadButton = (function(){
+        var btn = Button("Upload Photo", function(){
+            root.insert(PhotoUploadFormSingleton());
+            root.render();
+        });
+        btn.attr["type"] = "button";
+        btn.attr["style"] += tempStyle +
+            "position: relative;" +
+            "float:left;" +
+            "color: #fff;" +
+            "background-color: #1bb76e;" +
+            "border-radius: 5px;" +
+            "margin-top: 5px;" +
+            "width: 150px;" +
+            "height: 36px;;" +
+            "display:inline;" +
+            "";
+        return btn;
+    })();
+
+    var buttonContainer = (function () {
+        var obj = component();
+        obj.tag = "div";
+        obj.insert(uploadButton);
+        obj.insert(logoutButton);
+        obj.insert(settingsButton);
+        obj.insert(searchButton);
+        obj.attr["style"] += "" +
+            "width: 55%;" +
+            "float: right;" +
+            "padding-right: 10px;";
+
+        return obj;
+    })();
+
+
     obj.insert(profilePicture);
+    obj.insert(homeButton);
+
     //obj.insert(profileName);
 
     obj.insert(temp);
-    obj.insert(logoutButton);
-    obj.insert(settingsButton);
-    obj.insert(searchButton);
-    obj.insert(homeButton);
+    obj.insert(buttonContainer);
+
 
     return obj;
 };
@@ -1074,6 +1172,7 @@ var SessionBox = function () {
         "border-top: 0px;" +
         "border-color: 	#dbdbdb;" +
         "margin-bottom: 0px;" +
+        "padding-right: 0px;" +
         ";";
 
     var emptyCleanup = function (result) {
@@ -1089,13 +1188,9 @@ var SessionBox = function () {
             if (user.logged_in == "yes") {
                 obj.reset();
                 var userBox = ProfileBox(user.name, user.avatar);
-                var uploadButton = Button("Upload Photo", function(){
-                    root.insert(PhotoUploadFormSingleton());
-                    root.render();
-                });
-                uploadButton.attr["style"] += "float: right;";
+
                 obj.insert(userBox);
-                obj.insert(uploadButton);
+
 
                 triggerEvent("LoginDone");
                 root.update();
