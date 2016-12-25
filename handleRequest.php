@@ -371,7 +371,9 @@
             $sql = sprintf("
                 SELECT * 
                 FROM users
-                WHERE name LIKE '%%%s%%' AND id!=0;
+                WHERE name LIKE '%%%s%%' AND id!=0
+                ORDER BY name
+                LIMIT 9;
             ", $_GET['profile_name']);
             $result = $db->query($sql);
             $list = array();

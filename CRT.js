@@ -204,28 +204,63 @@ var formatRequest = function(list){
 var AvatarPhoto = function (_id, photoHeight = "100%", photoWidth = "100%") {
     var id = _id;
     var obj = Photo("#");
+    obj.name = "";
     obj.attr["height"] = photoHeight;
     obj.attr["width"] = photoWidth;
     obj.attr["style"] += "border-radius: 50%;"
-    obj.updateAvatar = function () {
+    obj.updateAvatar = function (cleanup = function () {}) {
         var req = formatRequest({
             "methodName" : "getProfileInfo",
             "profile_id" : id,
         });
         var callback = function (res) {
             var profile = JSON.parse(res.responseText);
+            obj.name = profile.name;
             obj.updatePhoto(profile.avatar);
             obj.attr["onClick"] = "stream.setProfileId(" + id + ");stream.updateStream();";
             root.render();
+            cleanup();
         }
         sendRequest("GET", req, callback);
     };
     obj.updateAvatar();
-
     obj.attr["onClick"] = "stream.setProfileId(" + id + ");stream.updateStream();";
 
     return obj;
 };
+
+var AvatarBox = function (_id, photoHeight = "100%", photoWidth = "100%") {
+    var obj = component();
+    var photo = AvatarPhoto(_id, photoHeight, photoWidth);
+    obj.nameBox = (function(){
+        var head = component();
+        head.tag = "h5";
+        head.attr["style"] += "" +
+
+            "font-family: sans-serif;" +
+            "margin-left: 5px;" +
+            "display: flex;" +
+            "align-items: center;" +
+            "";
+        return head;
+    })();
+    obj.tag = "div";
+    obj.updateBox = function () {
+        photo.updateAvatar(function () {
+            obj.nameBox.content = photo.name;
+            obj.content = obj.nameBox.render();
+            root.render();
+        });
+    };
+    obj.attr["style"] = "" +
+        "display: flex;" +
+        "align-items: center;";
+
+    obj.addUpdate(obj.updateBox);
+    obj.updateBox();
+    obj.insert(photo);
+    return obj;
+}
 
 var PhotoStream = function(photoHeight = "auto", photoWidth = "100%"){
     var obj = component();
@@ -248,17 +283,20 @@ var PhotoStream = function(photoHeight = "auto", photoWidth = "100%"){
             var resJSON = JSON.parse(res.responseText);
             var photoURLList = resJSON["photo_list"];
             var photoList = photoURLList.map((elem) => {
-                var photo = Photo(elem.url + "#" + new Date().getTime());
+                var photo = Photo(elem.url);
                 photo.attr["height"] = photoHeight;
                 photo.attr["width"] = photoWidth;
-                var avatar = AvatarPhoto(elem.id);
-                avatar.attr["height"] = "32";
-                avatar.attr["width"] = "32";
-                avatar.attr["style"] = "" +
-                    "display: inline;" +
-                    "border-radius: 50%;" +
-                    "margin: 15px;" +
-                    "";
+                var avatar = (function() {
+                    var obj = AvatarPhoto(elem.id);
+                    obj.attr["height"] = "32";
+                    obj.attr["width"] = "32";
+                    obj.attr["style"] = "" +
+                        "display: inline;" +
+                        "border-radius: 50%;" +
+                        "margin: 15px;" +
+                        "";
+                    return obj;
+                })();
                 var name = (function () {
                     var obj = component();
                     obj.tag = "h5";
@@ -270,7 +308,7 @@ var PhotoStream = function(photoHeight = "auto", photoWidth = "100%"){
                         "vertical-align: middle;";
                     return obj;
                 })();
-                return PhotoBox(avatar, name, photo, elem.photo_id, elem);
+                return PhotoBox(avatar, name, photo, elem.photo_id, elem.id);
             });
             //console.log(photoList);
             var streamTitle = component();
@@ -295,6 +333,30 @@ var PhotoStream = function(photoHeight = "auto", photoWidth = "100%"){
                         }
                         sendRequest("GET", req, callback);
                     });
+                    btn.attr["style"] = "" +
+                        "" +
+                        "" +
+                        "top: 50%;" +
+                        "display: inline;" +
+                        "width: 100px;" +
+                        "height: 35px;" +
+                        "float: right;" +
+                        ";" +
+                        ";" +
+                        "font-weight: bold;" +
+                        "font-family: sans-serif;";
+                    var styleFollow = btn.attr["style"] + "" +
+                        "background-color: #fff;" +
+                        "border-style: solid;" +
+                        "border-color: #3897f0;" +
+                        "border-radius: 3px;" +
+                        "color: #3897f0;";
+                    var styleFollowing = btn.attr["style"] + "" +
+                        "background-color: #70c050;" +
+                        "border-style: solid;" +
+                        "border-color: #70c050;" +
+                        "border-radius: 3px;" +
+                        "color: #fff;";
                     btn.checkFollowing = function () {
                         var req = formatRequest({
                             "methodName": "checkFollowProfile",
@@ -304,9 +366,11 @@ var PhotoStream = function(photoHeight = "auto", photoWidth = "100%"){
                             var tar = JSON.parse(res.responseText);
                             if (tar.following == "true") {
                                 btn.content = "Following";
+                                btn.attr["style"] = styleFollowing;
                             }
                             else {
                                 btn.content = "Follow";
+                                btn.attr["style"] = styleFollow;
                             }
                             root.render();
                         }
@@ -314,30 +378,32 @@ var PhotoStream = function(photoHeight = "auto", photoWidth = "100%"){
                     };
                     btn.checkFollowing();
                     btn.attr['type'] = "button";
-                    btn.attr["style"] = "" +
-                        "position: relative;" +
-                        "float: right;" +
-                        "top: 50%;" +
-                        "display: inline;" +
-                        "width: 100px;" +
-                        "right: 71%;" +
-                        "vertical-align:;" +
-                        "margin-top: 40px;";
+
                     return btn;
                 })(obj.profileID);
                 streamTitle = (function (profileID) {
                     var obj = component();
                     obj.tag = "div";
-                    var avatar = AvatarPhoto(profileID, "64px", "64px");
-                    obj.attr["style"] += "margin: 0px auto;"
+                    var avatar = (function() {
+                        var obj = AvatarBox(profileID, "64px", "64px");
+                        obj.attr["style"] += "" +
+                            "display: inline-flex;" +
+                            ";" +
+                            "";
+                        obj.nameBox.attr["style"] += "" +
+                            "font-size: ;" +
+                            "";
+                        return obj;
+                    })();
+                    obj.attr["style"] += "margin: 0px auto; display: inline;"
                     obj.insert(avatar);
                     obj.insert(followButton);
                     return obj;
                 })(obj.profileID);
             };
             streamTitle.attr["style"] += "" +
-                "margin: 0px auto; width: 50%;" +
-                "";
+                "margin: 0px auto;;" +
+                "width: 500px;;";
             obj.reset();
             obj.insert(streamTitle);
             obj.insertAll(photoList);
@@ -353,10 +419,11 @@ var PhotoStream = function(photoHeight = "auto", photoWidth = "100%"){
     return obj;
 }
 
-var Paragraph = function(text){
+var Paragraph = function(text, style=""){
     var obj = component();
     obj.tag = "p";
     obj.content = text;
+    obj.attr["style"] = style;
     return obj;
 };
 
@@ -375,6 +442,17 @@ var getRootNode = function(){
     obj.tag = "div";
     obj.DOMREF = document.getElementById("root");
     return obj;
+};
+
+var getFileName = function (str, maxLength = 15) {
+    var ar = str.split("\\");
+    var ret = "";
+    if(ar.length)
+        ret = ar[ar.length - 1];
+    console.log(ret);
+    if(ret.length > maxLength) ret = ret.substring(ret.length - maxLength, maxLength);
+    console.log(ret);
+    return ret;
 };
 
 var UploadForm = function(){
@@ -396,10 +474,42 @@ var UploadForm = function(){
         obj.tag = "input";
         obj.attr = {
             "type" : "file",
+            "id" : "photoUploadBrowse",
             "name" : "photo",
-            "style" : "float:right;"
+            "value" : "",
+            "onchange" : 'document.getElementById("hiddenPhotoBrowseLabel").innerHTML=getFileName(this.value);',
+            "style" : "display: none;"
         };
         return obj;
+    })();
+    obj.diagProxy = (function () {
+        var btn = Button("", function () {
+
+        });
+        btn.hiddenLabel = (function() {
+            var hiddenLabel = Label("Browse");
+            hiddenLabel.attr["id"] = "hiddenPhotoBrowseLabel";
+            hiddenLabel.attr["onclick"] = 'document.getElementById("photoUploadBrowse").click();';
+            hiddenLabel.attr["style"] = "" +
+                "display: inline-block;" +
+                "width: 90%;;" +
+                "height: 85%;;" +
+                "margin:;" +
+                "margin-left: 5px;" +
+                "margin-right: 5px;" +
+                "text-overflow: ellipsis" +
+                "white-space: nowrap" +
+                "overflow: hidden;" +
+                "";
+            return hiddenLabel;
+        })();
+        btn.attr["style"] += "" +
+            "display: inline;" +
+            "padding: 0px;" +
+            "padding-right: 2px;" +
+            "padding-bottom: 5px;";
+        btn.insert(btn.hiddenLabel);
+        return btn;
     })();
     obj.button = (function(){
         var obj = component();
@@ -409,7 +519,7 @@ var UploadForm = function(){
             "value": "Upload Photo",
             "name": "submit",
             "onclick" :'root.update();triggerEvent("FrameClose");',
-            "style" : "float: right;"
+            "style" : ""
         };
         return obj;
     })();
@@ -424,8 +534,9 @@ var UploadForm = function(){
         };
         return obj;
     })();
-    obj.insert(obj.button);
     obj.insert(obj.diag);
+    obj.insert(obj.diagProxy);
+    obj.insert(obj.button);
     obj.insert(obj.tempName);
     return obj;
 
@@ -446,12 +557,14 @@ var Button = function(text, callback){
     addEventTrigger(obj.eventID, obj.callback);
     obj.attr = {"onClick" : 'triggerEvent("ButtonClick' + Button.eventNumber + '")', "style" : ""};
     var tempStyle = "display: block; margin-bottom: 10px; " +
-        "padding: 5px;" +
+        "padding: 2px;" +
         "height: 30px;" +
         "border-style: solid;" +
         "border-width: 1px;" +
         "border-radius: 2px;" +
-        "border-color: #dbdbdb;";
+        "border-color: #dbdbdb;" +
+        "margin-bottom: 0px;";
+    obj.attr["style"] += tempStyle;
     return obj
 };
 Button.eventNumber = 0; //Static Variables
@@ -943,9 +1056,50 @@ var TranslucentContainer = function () {
 
 }
 
+var Comment = function (_id, _text) {
+    var text = _text;
+    var id = _id;
+    var obj = component();
+    var avatarBox = (function () {
+        var obj = AvatarBox(id, "32px", "32px");
+        //console.log(obj);
+        obj.attr["style"] += "" +
+            "height: 36px;" +
+            "margin-top: 3px;";
+        return obj;
+    })();
+    var textBox = (function () {
+        var obj = component();
+        obj.tag = "div";
+        obj.content = text;
+        obj.attr["style"] += "" +
+            "margin: 0px;" +
+            "margin-left: 32px;" +
+            "font-family: sans-serif;" +
+            "word-wrap: break-word;" +
+            "";
+        return obj;
+    })();
+    obj.tag = "div";
+    obj.attr["style"] += "" +
+        "font-size: 14px;" +
+        "left: 32px;";
+    obj.insert(avatarBox);
+    obj.insert(textBox);
+    return obj;
+}
+
 var CommentStream = function (photoID) {
     var obj = component();
     obj.tag = "div";
+    var commentLabel = (function () {
+        var obj = Label("Comments:");
+        obj.attr["style"] += "" +
+            "font-size: 16px;" +
+            "margin-top: 15px;" +
+            "";
+        return obj;
+    })();
     obj.updateCommentStream = function () {
         var req = formatRequest({
             "methodName" : "getPhotoCommentAll",
@@ -954,28 +1108,30 @@ var CommentStream = function (photoID) {
         var callback = function (res) {
             var tar = JSON.parse(res.responseText);
             var commentList = tar.commentList.map(function (comment) {
-                var obj = component();
-                obj.tag = "div";
-                obj.content = comment.description;
-                return obj;
+                return Comment(comment.user_id, comment.description);
             });
             obj.reset();
+            //obj.insert(commentLabel);
             obj.insertAll(commentList);
             root.render();
         };
         sendRequest("GET", req, callback);
     };
+    obj.attr["style"] += "" +
+        "height: 266px;" +
+        "overflow: auto;" +
+        "";
     obj.addUpdate(obj.updateCommentStream);
     obj.updateCommentStream();
     return obj;
 };
 
 var CommentForm = function (photoID) {
-    var tempStyle = "display: block; margin-bottom: 10px; " +
-        "padding: 5px;" +
-        "height: 30px;" +
+    var tempStyle = "display: inline; margin-bottom: 10px; " +
+        "padding: 12px;" +
+        "" +
         "border-style: solid;" +
-        "border-width: 1px;" +
+        "border-width: 0px;" +
         "border-radius: 2px;" +
         "border-color: #dbdbdb;";
     var obj = component();
@@ -985,7 +1141,7 @@ var CommentForm = function (photoID) {
         "method" : "POST",
         "enctype" : "multipart/form-data",
         "target" : "skipFrame",
-        "style" : "margin: 0px auto; width: 50%",
+        "style" : "margin: 0px auto; width: 100%;",
     };
     var commentText = (function () {
         var obj = component();
@@ -994,7 +1150,10 @@ var CommentForm = function (photoID) {
             "type" : "text",
             "placeholder" : "Write your comment here",
             "name" : "commentText",
-            "style" : tempStyle
+            "style" : tempStyle +"" +
+            "margin-right: 0px;" +
+            "margin-left: 1px;" +
+            "width: 75%",
         };
         return obj;
     })();
@@ -1005,8 +1164,22 @@ var CommentForm = function (photoID) {
             "type" : "submit",
             "value" : "Comment",
             "onclick" : "",
-            "style" : tempStyle,
-        }
+            "style" : tempStyle +"" +
+                "display: inline;" +
+                "background-color: #70c050;" +
+                "border-width: 0px;" +
+                "width: 23.3%;" +
+                "color: #fff",
+        };
+        var btn = Button("Comment", function () {
+
+        });
+        btn.attr["style"] += tempStyle +"" +
+            "display: inline-block;" +
+            "background-color: #70c050;" +
+            "border-width: 0px;" +
+            "width: 100px;" +
+            "color: #fff";
         return obj;
     })();
     var hiddenMethodName = (function () {
@@ -1047,8 +1220,8 @@ var PhotoDetails = function (photoID) {
         var callback = function (res) {
             var tar = JSON.parse(res.responseText);
             obj.reset();
-            obj.insert(Paragraph(tar.description));
-            obj.insert(Paragraph(tar.moment));
+            obj.insert(Paragraph(tar.description, "height: 60px;"));
+            obj.insert(Paragraph(tar.moment, "font-size: 11px;"));
             root.render();
         };
         sendRequest("GET", req, callback);
@@ -1059,10 +1232,11 @@ var PhotoDetails = function (photoID) {
 }
 
 
-var PhotoFrameFloatSingleton = function (_url, _photoID) {
+var PhotoFrameFloatSingleton = function (_url, _photoID, _userID) {
     var obj = FrameFloatSingleton();
     var url = _url;
     var photoID = _photoID;
+    var userID = _userID;
     var deleteButton = (function () {
         var btn = Button("Delete", function () {
             var callback = function (res) {
@@ -1076,38 +1250,89 @@ var PhotoFrameFloatSingleton = function (_url, _photoID) {
             });
             sendRequest("GET", req, callback);
         });
+        btn.attr["style"] += "" +
+            "background-color: #D9534F;" +
+            "color: #fff;" +
+            "padding: 8px;" +
+            "margin-bottom: 5px;" +
+            "margin-top: 2px;" +
+            "vertical-align: middle;" +
+            "border-radius: 5px;" +
+            ""
         return btn;
     })();
 
     var photo = (function() {
         var obj = Photo(url);
-        obj.attr["width"] = "500px";
-        obj.attr["height"] = "auto";
         obj.attr["style"] += "" +
+            "display: flex;" +
+            "align-items: center;" +
+            "border-width: 0px; " +
+            "border-style: solid;" +
+            "max-width: 100%;" +
+            "max-height: 100%;" +
+            "padding: 0px;" +
+            "margin: auto;" +
+            "" +
+            "";
+        return obj;
+    })();
+    var photoContainer = (function () {
+        var obj = component();
+        obj.tag = "div";
+        obj.attr["style"] += "" +
+            "display: flex;" +
+            "align-items: center;" +
+            "width: 65%;" +
+            "height: 520px;" +
+            "padding: 0px;" +
             "float: left;" +
-            "border-width: 5px; " +
-            "border-style: solid;";
+            "background-color: black;" +
+            "padding-right: 3px;";
+        obj.insert(photo);
         return obj;
     })();
     var photoInfo = (function () {
         var obj = component();
         obj.tag = "div";
-        obj.insert(PhotoDetails(photoID));
-        obj.insert(CommentStream(photoID));
-        obj.insert(CommentForm(photoID));
         obj.attr["style"] += "" +
+            "position: relative;" +
             "float: right;" +
-            "width: 200px;" +
+            "width: 33%;" +
             "";
+        var commentForm = (function () {
+            var cmt = CommentForm(photoID);
+            cmt.attr["style"] += "" +
+                "position: absolute;" +
+                "left: -5.2%;" +
+                "width: 106.6%;" +
+                "padding-bottom: 10px;" +
+                "";
+            return cmt;
+        })();
+        var AVBox = AvatarBox(userID, "48px", "48px");
+        AVBox.nameBox.attr["style"] += "" +
+            "font-size: 14px;" +
+            "" +
+            "";
+        obj.insert(AVBox);
+        obj.insert(PhotoDetails(photoID));
+        obj.insert(deleteButton);
+        obj.insert(CommentStream(photoID));
+        obj.insert(commentForm);
         return obj;
     })();
     obj.attr['style'] += "" +
-        "width: 800px;" +
-        "left: 40%;" +
-        "top: 60%;" +
+        "" +
+        "width: 90%;" +
+        "max-width: 1000px;" +
+        "height: 520px;" +
+        "margin: auto;" +
+        "top: 10%;" +
+        "left: 0;" +
+        "right: 0;" +
         "";
-    obj.insert(photo);
-    obj.insert(deleteButton);
+    obj.insert(photoContainer);
     obj.insert(photoInfo);
     return obj;
 }
@@ -1116,13 +1341,14 @@ var getElem = function (x) {
     return document.getElementById(x);
 }
 
-var PhotoBox = function (_avatar, _name, _photo, _photoID) {
+var PhotoBox = function (_avatar, _name, _photo, _photoID, _userID) {
     var obj = component();
     obj.tag = "div";
     var photo = _photo;
     var name = _name;
     var avatar = _avatar;
     var photoID = _photoID;
+    var userID = _userID;
     photo.attr["id"] = photo.attr["src"];
     var userProfile = (function () {
         var obj = component();
@@ -1144,7 +1370,7 @@ var PhotoBox = function (_avatar, _name, _photo, _photoID) {
         "margin: 10px;" +
         "margin-bottom: 50px;" +
         "background-color: 	white;";
-    var clickText = 'root.insert(PhotoFrameFloatSingleton("' + photo.attr["src"] + '","' + photoID + '"));root.render();';
+    var clickText = 'root.insert(PhotoFrameFloatSingleton("' + photo.attr["src"] + '","' + photoID + '","' + userID + '"));root.render();';
     photo.attr["onClick"] = clickText;
     return obj;
 }
@@ -1152,7 +1378,7 @@ var PhotoBox = function (_avatar, _name, _photo, _photoID) {
 var Container = function (x) {
     var obj = component();
     obj.tag = "div";
-    obj.insert(x);
+    obj.content = x;
     return obj;
 }
 
@@ -1174,14 +1400,36 @@ var PhotoUploadFormSingleton = function () {
         var obj = UploadForm();
         obj.description = (function () {
             var obj = component();
-            obj.tag = "input";
+            obj.tag = "textarea";
             obj.attr = {
                 "type" : "input",
                 "name" : "description",
-                "style" : tempStyle,
+                "style" : tempStyle + "" +
+                "height: 100px;" +
+                "padding: 3px;;" +
+                "width: 500px;",
             };
             return obj;
         })();
+
+        obj.labelDescription = (function () {
+            var obj = Label("Description:");
+            obj.attr["style"] += "" +
+                "position: ;" +
+                "display: block;" +
+                "margin-top: 60px;" +
+                "" +
+                "margin-left: 0px;" +
+                "margin-right: 50px;" +
+                "left: -50px;" +
+                "";
+            return obj;
+        })();
+        obj.attr["style"] += "" +
+            "" +
+            "padding-bottom: 25px;" +
+            "";
+        obj.insert(obj.labelDescription);
         obj.insert(obj.description);
         return obj;
     })();
@@ -1189,7 +1437,7 @@ var PhotoUploadFormSingleton = function () {
     return obj;
 };
 
-var SearchForm = function () {
+var SearchForm = function (searchResultBox) {
     var tempStyle = "display: block; margin-bottom: 10px; " +
         "padding: 5px;" +
         "height: 30px;" +
@@ -1204,7 +1452,7 @@ var SearchForm = function () {
         "method" : "POST",
         "enctype" : "multipart/form-data",
         "target" : "skipFrame",
-        "style" : "margin: 0px auto; width: 50%;"
+        "style" : "margin: 0px auto;"
     };
     var searchTextValue = "";
     var searchText = (function () {
@@ -1213,29 +1461,19 @@ var SearchForm = function () {
         obj.attr = {
             "id" : "SearchBox",
             "type" : "text",
-            "placeholder" : "search",
+            "placeholder" : "Enter Search query here...",
             "name" : "searchText",
             "value" : searchTextValue,
-            "style" : tempStyle,
+            "style" : tempStyle + "" +
+                "display: inline;" +
+                "width: 85%;" +
+                "height: 40px;" +
+                "border-top-left-radius: 10px;",
         };
         return obj;
     })();
 
 
-    var searchResult = (function () {
-        var obj = component();
-        obj.tag = "div";
-        obj.updateResult = function (profileList) {
-             var newList = profileList.map(function (profile) {
-                 var avatar = AvatarPhoto(profile.id, "64", "64");
-                 return avatar;
-             });
-            obj.reset();
-            obj.insertAll(newList);
-            root.update();
-        };
-        return obj;
-    })();
 
     var searchButton = (function () {
         var btn = Button ("Search", function () {
@@ -1247,28 +1485,94 @@ var SearchForm = function () {
             });
             var callback = function (res) {
                 var tar = JSON.parse(res.responseText);
-                searchResult.updateResult(tar.profile_list);
+                searchResultBox.updateResult(tar.profile_list);
             };
             sendRequest("GET", req, callback);
         });
         btn.attr["type"] = "button";
+        btn.attr["style"] +="" +
+            "display: inline;" +
+            "height: 40px;" +
+            "width: 15%;" +
+            "border-width: 0px;" +
+            "background-color: #21AEFE;" +
+            "color: #fff;" +
+            "font-size: 16px;" +
+            "font-weight: bold;" +
+            "border-top-right-radius: 10px;" +
+            ""
         return btn;
     })();
     obj.updateSearchTextValue = function () {
         searchText.attr["value"] = searchTextValue;
     };
+
     obj.attr["onSubmit"] = "return false;";
     obj.attr["onkeypress"] = 'if(event.keyCode == 13) triggerEvent("' + searchButton.eventID + '");'
     obj.addUpdate(obj.updateSearchTextValue);
-    obj.insert(searchText);
-    obj.insert(searchButton);
-    obj.insert(searchResult);
+    var searchBoxContainer = (function () {
+        var obj = component();
+        obj.tag = "div";
+        obj.insert(searchText);
+        obj.insert(searchButton);
+        obj.attr["style"] += "" +
+            "margin: 0 auto;" +
+            "" +
+            "";
+        return obj;
+    })();
+    obj.insert(searchBoxContainer);
 
     return obj;
 }
 
 var SearchFormSingleton = function () {
     var obj = FrameFloatSingleton();
-    obj.insert(SearchForm());
+    var searchResultBox = (function () {
+        var obj = component();
+        obj.tag = "div";
+        var resultLabel = (function () {
+            var obj = Label("Results:");
+            obj.attr["style"] += "" +
+                "font-size: 24px;" +
+                "font-family: sans-serif;" +
+                "float: left;" +
+                "width: 100%;" +
+                "height: 35px;" +
+                "";
+            return obj;
+        })();
+        obj.updateResult = function (profileList) {
+            var newList = profileList.map(function (profile) {
+                var avatarBox = AvatarBox(profile.id, "64", "64");
+                avatarBox.attr["style"] += "" +
+                    "float: left;" +
+                    "margin: 15px;";
+                return avatarBox;
+            });
+            obj.reset();
+            obj.insert(resultLabel);
+            obj.insertAll(newList);
+            root.update();
+        };
+        obj.insert(resultLabel);
+        obj.attr["style"] += "" +
+            "padding: 15px;" +
+            "";
+        return obj;
+    })();
+    obj.insert(SearchForm(searchResultBox));
+    obj.insert(searchResultBox);
+    obj.attr["style"] += "" +
+        "width: 800px;" +
+        "height: 500px;" +
+        "left: 0;" +
+        "right: 0;" +
+        "margin-left: auto;" +
+        "margin-right: auto;" +
+        "border-width: 2px;" +
+        "border-color: #0E4061;" +
+        "border-radius: 10px;" +
+        "";
     return obj;
 }
