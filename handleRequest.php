@@ -321,6 +321,63 @@
         }
     }
 
+    function checkLikePhoto(){
+        $ret = FALSE;
+        $ar = array();
+        $ar["liked"] = "false";
+        if(isset($_SESSION['user_id']) && isset($_GET['photo_id'])){
+            $db = get_db();
+            $sql = sprintf("
+                    SELECT *
+                    FROM likes
+                    WHERE user_id=%s AND photo_id=%s;
+                ", $_SESSION['user_id'], $_GET['photo_id']);
+            $result = $db->query($sql);
+            $row = $result->fetch_assoc();
+            if($row){
+                $ar["liked"] = "true";
+                $ret = TRUE;
+            }
+            $sql = sprintf("
+                SELECT COUNT(user_id) as cnt
+                FROM likes
+                WHERE user_id!=%s AND photo_id=%s;
+            ", $_SESSION['user_id'], $_GET['photo_id']);
+            $result = $db->query($sql);
+            $row = $result->fetch_assoc();
+            if($row){
+                $ar['total_likes'] = $row['cnt'];
+            }
+        }
+        echo(json_encode($ar));
+        return $ret;
+    }
+
+    function toggleLikePhoto(){
+        if(isset($_SESSION['user_id']) && isset($_GET['photo_id'])){
+            $liked = checkLikePhoto();
+            $db = get_db();
+            if($liked == TRUE){
+                $sql = sprintf("
+                        DELETE
+                        FROM likes
+                        WHERE user_id=%s AND photo_id=%s;
+                    ", $_SESSION['user_id'], $_GET['photo_id']);
+                $result = $db->query($sql);
+            }
+            else if(isset($_SESSION['user_id'])){
+                $sql = sprintf("
+                        INSERT 
+                        INTO likes(user_id, photo_id)
+                        VALUES (%s, %s)
+                    ", $_SESSION['user_id'], $_GET['photo_id']);
+                $result = $db->query($sql);
+            }
+        }
+    }
+
+    
+
     function is_empty($str){
         return $str == "";
     }
@@ -388,4 +445,6 @@
         }
         echo (json_encode($ar));
     }
+
+
 ?>

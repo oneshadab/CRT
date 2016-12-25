@@ -116,6 +116,9 @@ var component = function(){
             if(idx > -1){
                 this.children.splice(idx, 1);
             }
+        },
+        getAllChildren: function (x) {
+            return this.children;
         }
     };
 };
@@ -139,6 +142,15 @@ var CenterFloatObject = function (){
     return obj;
 }
 
+var Script = function (text = "") {
+    var obj = component();
+    obj.tag = "script";
+    obj.attr["style"] = "1";
+    obj.attr["type"] = "text/javascript";
+    obj.content = text;
+    return obj;
+};
+
 
 var FrameFloatSingleton = function () {
     var out = this;
@@ -148,7 +160,12 @@ var FrameFloatSingleton = function () {
             root.render();
         }
     };
+    var transitionFrame = function () {
+        console.log("Transitioning");
+
+    };
     addEventTrigger("FrameClose", removeFrame);
+    addEventTrigger("FrameTransition", transitionFrame);
     return (function() {
         removeFrame();
         var obj = CenterFloatObject();
@@ -168,14 +185,19 @@ var FrameFloatSingleton = function () {
             obj.attr["onMouseOut"] = 'this.style["display"] = "none";';
             return obj;
         }();
-        obj.insert(obj.removeButton);
         obj.attr["style"] += "" +
             "border-radius: 2px;" +
             "border-style: solid;" +
+            "top: 10%;" +
+            "transition: 2s;" +
             "";
         obj.attr["onMouseOver"] = 'this.getElementsByClassName("removeButton")[0].style["display"] = "block";';
         obj.attr["onMouseOut"] = 'this.getElementsByClassName("removeButton")[0].style["display"] = "none";';
-        return out.inner_obj = obj;
+        obj.insert(obj.removeButton);
+        out.inner_obj = obj;
+        root.render();
+        //triggerEvent("FrameTransition");
+        return obj;
     })();
 };
 FrameFloatSingleton.inner_obj = null; // Static Variables
@@ -268,7 +290,8 @@ var PhotoStream = function(photoHeight = "auto", photoWidth = "100%"){
     obj.profileID = null;
     obj.tag = "div";
     obj.attr = { // Temporary styles
-        "style" : "margin: 100 auto; width: 50%;"
+        "style" : "margin: 100 auto; width: 50%;" +
+            "margin-top: 90px;"
     };
     obj.setProfileId = function (val) {
         obj.profileID = val;
@@ -317,6 +340,9 @@ var PhotoStream = function(photoHeight = "auto", photoWidth = "100%"){
                     var obj = component();
                     obj.tag = "div";
                     var head = Heading("Home");
+                    head.attr["style"] += "" +
+                        "text-align: center;" +
+                        "";
                     obj.insert(head);
                     return obj;
                 })();
@@ -403,7 +429,7 @@ var PhotoStream = function(photoHeight = "auto", photoWidth = "100%"){
             };
             streamTitle.attr["style"] += "" +
                 "margin: 0px auto;;" +
-                "width: 500px;;";
+                ";";
             obj.reset();
             obj.insert(streamTitle);
             obj.insertAll(photoList);
@@ -449,13 +475,18 @@ var getFileName = function (str, maxLength = 15) {
     var ret = "";
     if(ar.length)
         ret = ar[ar.length - 1];
-    console.log(ret);
-    if(ret.length > maxLength) ret = ret.substring(ret.length - maxLength, maxLength);
-    console.log(ret);
+    //if(ret.length > maxLength) ret = ret.substring(0, maxLength);
     return ret;
 };
 
 var UploadForm = function(){
+    var tempStyle = "display: block; margin-bottom: 10px; " +
+        "padding: 5px;" +
+        "height: 30px;" +
+        "border-style: solid;" +
+        "border-width: 1px;" +
+        "border-radius: 2px;" +
+        "border-color: #dbdbdb;";
     var obj = component();
     obj.tag="form";
     obj.attr = {
@@ -497,17 +528,24 @@ var UploadForm = function(){
                 "margin:;" +
                 "margin-left: 5px;" +
                 "margin-right: 5px;" +
-                "text-overflow: ellipsis" +
-                "white-space: nowrap" +
+                "text-overflow: ellipsis;" +
+                "white-space: nowrap;" +
                 "overflow: hidden;" +
+                "vertical-align: center;" +
+                "text-align: center;" +
+                "color: #fff;" +
+                 +
                 "";
             return hiddenLabel;
         })();
         btn.attr["style"] += "" +
             "display: inline;" +
             "padding: 0px;" +
-            "padding-right: 2px;" +
-            "padding-bottom: 5px;";
+            "padding-top: 15px;" +
+            "height: 50px;" +
+            "width: 100px;" +
+            "background-color: #70c050;" +
+            "border-radius: 5px;";
         btn.insert(btn.hiddenLabel);
         return btn;
     })();
@@ -516,11 +554,22 @@ var UploadForm = function(){
         obj.tag = "input";
         obj.attr = {
             "type": "submit",
-            "value": "Upload Photo",
+            "value": "Upload",
             "name": "submit",
             "onclick" :'root.update();triggerEvent("FrameClose");',
-            "style" : ""
         };
+        obj.attr["style"] += tempStyle +
+            "float: right;" +
+            "background-color: #3897f0;" +
+            "color: #fff;" +
+            "border-color: #fff;" +
+            "border-radius: 5px;" +
+            "border-width: 1px;" +
+            "padding: 8px;" +
+            "width: 100px;" +
+            "height: 50px;" +
+            "font-size: 18  px;" +
+            "font-weight: bold;";
         return obj;
     })();
     obj.tempName = (function(){
@@ -876,12 +925,13 @@ var SettingsBoxFloatSingleton = function () {
     var obj = FrameFloatSingleton();
     obj.attr["style"] += "" +
         "height: 400px;" +
+        "top: 55%;" +
         "border-style: solid;" +
         "border-radius: 2px" +
         "";
     var avatarForm = UploadForm();
     avatarForm.children[2].attr["value"]="changeAvatar";
-    avatarForm.attr["style"] += "margin-top: 50px;padding-bottom: 50px; margin-right: 80px;";
+    avatarForm.attr["style"] += "margin-top: 50px;padding-bottom: 50px; margin: 5px;";
     obj.insert(avatarForm);
     obj.insert(SettingsForm());
     return obj;
@@ -895,24 +945,31 @@ var ProfileBox = function(name, avatar) {
         "method" : "POST",
         "enctype" : "multipart/form-data",
         "target" : "skipFrame",
-        "style" : "margin-bottom: 0px;"
+        "style" : "margin-bottom: 0px;" +
+            "padding-bottom: 10px;" +
+            "height: 16px;"
     };
     var profilePicture = (function () {
-        var obj = AvatarPhoto(user.id);
-        obj.attr["height"] = "64";
-        obj.attr["width"] = "64";
-        obj.attr["style"] ="" +
-            "border-radius: 50%;";
+        var obj = AvatarBox(user.id, 32, 32);
+        obj.attr["style"] += "" +
+            "position: absolute;" +
+            "display: inline-flex;" +
+            "bottom: -5px;" +
+            "margin: auto;" +
+            "left: 0;;" +
+            "width: 100px;" +
+            "right: 0;" +
+            "";
         return obj;
     })();
     var profileName = (function () {
         var obj = component();
-        obj.tag = "h1";
+        obj.tag = "h3";
         obj.content = name;
         obj.attr = {
             "href" : "index.php",
             "align" : "left",
-            "width" : "20px",
+            "width" : "10px",
             "style" : "" +
             "margin-left: 10px; " +
             "padding-top: 10px;" +
@@ -987,7 +1044,7 @@ var ProfileBox = function(name, avatar) {
         return btn;
     })();
     obj.insert(profilePicture);
-    obj.insert(profileName);
+    //obj.insert(profileName);
 
     obj.insert(temp);
     obj.insert(logoutButton);
@@ -1002,11 +1059,15 @@ var SessionBox = function () {
     var obj = component();
     obj.tag = "div";
     obj.attr["style"] = "" +
+        "position: fixed;" +
+        "height: 48px;" +
+        "padding: 0px;" +
         "padding: 10px;" +
+        "box-sizing: border-box;" +
         "margin: 0 auto;" +
-        "width: 75%; " +
+        "width: 100%; " +
         "background: white;" +
-        "top: -50%;" +
+        "top: 0px;;" +
         "border-width: 2px;" +
         "border-radius: 5px;" +
         "border-style: solid;" +
@@ -1118,7 +1179,7 @@ var CommentStream = function (photoID) {
         sendRequest("GET", req, callback);
     };
     obj.attr["style"] += "" +
-        "height: 266px;" +
+        "height: 252px;" +
         "overflow: auto;" +
         "";
     obj.addUpdate(obj.updateCommentStream);
@@ -1258,7 +1319,89 @@ var PhotoFrameFloatSingleton = function (_url, _photoID, _userID) {
             "margin-top: 2px;" +
             "vertical-align: middle;" +
             "border-radius: 5px;" +
+            "display: inline-block;";
+        return btn;
+    })();
+    var likeLabel = (function () {
+        var obj = Label("Be the first person to like this");
+        obj.attr["style"] += "" +
+            "display: block;" +
             ""
+        return obj;
+    })();
+    var likeButton = (function () {
+        var btn = Button("Like", function () {
+            var req = formatRequest({
+                "methodName": "toggleLikePhoto",
+                "photo_id": photoID,
+            });
+            var callback = function (res) {
+                btn.checkLiked();
+            }
+            sendRequest("GET", req, callback);
+        });
+        btn.attr["style"] = "" +
+            "top: 50%;" +
+            "display: inline-block;" +
+            "padding: 6px;" +
+            "width: 60px;" +
+            "margin-top: 2px;;" +
+            "margin-bottom: 5px;" +
+            "vertical-align: middle;" +
+            "font-weight: bold;" +
+            "font-family: sans-serif;";
+        var styleLike = btn.attr["style"] + "" +
+            "background-color: #fff;" +
+            "border-style: solid;" +
+            "border-color: #3897f0;" +
+            "border-radius: 5px;" +
+            "color: #3897f0;";
+        var styleLiked = btn.attr["style"] + "" +
+            "background-color: #3897f0;" +
+            "border-style: solid;" +
+            "border-color: #3897f0;" +
+            "border-radius: 5px;" +
+            "color: #fff;";
+        btn.checkLiked = function () {
+            var req = formatRequest({
+                "methodName": "checkLikePhoto",
+                "photo_id": photoID,
+            });
+            var callback = function (res) {
+                var tar = JSON.parse(res.responseText);
+                if (tar.liked == "true") {
+                    btn.content = "Liked";
+                    btn.attr["style"] = styleLiked;
+                }
+                else {
+                    btn.content = "Like";
+                    btn.attr["style"] = styleLike;
+                }
+                if(tar.total_likes == 1 && tar.liked == "true"){
+                    likeLabel.content = "You and " + tar.total_likes + " other person like this"
+                }
+                else if(tar.total_likes > 1 && tar.liked == "true"){
+                    likeLabel.content = "You and " + tar.total_likes + " other people like this"
+                }
+                else if(tar.liked == "true"){
+                    likeLabel.content = "You liked this";
+                }
+                else if(tar.total_likes == 1){
+                    likeLabel.content = tar.total_likes + " person likes this"
+                }
+                else if(tar.total_likes >= 1){
+                    likeLabel.content = tar.total_likes + " people like this"
+                }
+                else{
+                    likeLabel.content = "Be the first to like this";
+                }
+                root.render();
+            }
+            sendRequest("GET", req, callback);
+        };
+        btn.checkLiked();
+        btn.attr['type'] = "button";
+
         return btn;
     })();
 
@@ -1317,6 +1460,8 @@ var PhotoFrameFloatSingleton = function (_url, _photoID, _userID) {
             "";
         obj.insert(AVBox);
         obj.insert(PhotoDetails(photoID));
+        obj.insert(likeLabel);
+        obj.insert(likeButton);
         obj.insert(deleteButton);
         obj.insert(CommentStream(photoID));
         obj.insert(commentForm);
@@ -1328,7 +1473,7 @@ var PhotoFrameFloatSingleton = function (_url, _photoID, _userID) {
         "max-width: 1000px;" +
         "height: 520px;" +
         "margin: auto;" +
-        "top: 10%;" +
+        ";" +
         "left: 0;" +
         "right: 0;" +
         "";
@@ -1392,9 +1537,7 @@ var PhotoUploadFormSingleton = function () {
         "border-color: #dbdbdb;";
 
     var obj = FrameFloatSingleton();
-    obj.attr["style"] += "" +
-        "padding: 15px;" +
-        "";
+
 
     var upForm = (function(){
         var obj = UploadForm();
@@ -1405,23 +1548,34 @@ var PhotoUploadFormSingleton = function () {
                 "type" : "input",
                 "name" : "description",
                 "style" : tempStyle + "" +
-                "height: 100px;" +
-                "padding: 3px;;" +
-                "width: 500px;",
+                "height: 170px;" +
+                "padding: 8px;;" +
+                "width: 500px;" +
+                "border-radius: 5px;",
+                "placeholder" : "Enter a photo description here..."
             };
             return obj;
         })();
-
+        obj.formTitle = (function () {
+            var obj = Label("Choose Photos to Upload...");
+            obj.attr['style'] += "" +
+                "display: block;" +
+                "font-size: 16px;" +
+                "margin-bottom: 10px;" +
+                "";
+            return obj;
+        })();
         obj.labelDescription = (function () {
             var obj = Label("Description:");
             obj.attr["style"] += "" +
                 "position: ;" +
                 "display: block;" +
-                "margin-top: 60px;" +
+                "margin-top: 30px;" +
                 "" +
                 "margin-left: 0px;" +
                 "margin-right: 50px;" +
                 "left: -50px;" +
+                "font-size: 18px;" +
                 "";
             return obj;
         })();
@@ -1429,10 +1583,23 @@ var PhotoUploadFormSingleton = function () {
             "" +
             "padding-bottom: 25px;" +
             "";
+        var tempStorage = obj.getAllChildren();
+        obj.reset();
+        obj.insert(obj.formTitle);
+        obj.insertAll(tempStorage);
         obj.insert(obj.labelDescription);
         obj.insert(obj.description);
         return obj;
     })();
+    obj.attr["style"] += "" +
+        "padding: 15px;" +
+        "top: 60%;" +
+        "height: 300px;" +
+        "border-width: 1px;" +
+        "border-radius: 5px;" +
+        "background-color: #FAFAFA;" +
+        "color: #404040;   " +
+        ""
     obj.insert(upForm);
     return obj;
 };
@@ -1542,6 +1709,14 @@ var SearchFormSingleton = function () {
                 "";
             return obj;
         })();
+        var emptyResultLabel = (function () {
+            var obj = Label("No Results were Found...");
+            obj.attr["style"] += "" +
+                "margin: auto;" +
+                "font-size: 14px;" +
+                "";
+            return obj;
+        })();
         obj.updateResult = function (profileList) {
             var newList = profileList.map(function (profile) {
                 var avatarBox = AvatarBox(profile.id, "64", "64");
@@ -1553,9 +1728,13 @@ var SearchFormSingleton = function () {
             obj.reset();
             obj.insert(resultLabel);
             obj.insertAll(newList);
+            if(newList.length == 0){
+                obj.insert(emptyResultLabel);
+            }
             root.update();
         };
         obj.insert(resultLabel);
+        //obj.insert(emptyResultLabel);
         obj.attr["style"] += "" +
             "padding: 15px;" +
             "";
@@ -1566,6 +1745,7 @@ var SearchFormSingleton = function () {
     obj.attr["style"] += "" +
         "width: 800px;" +
         "height: 500px;" +
+        "top: 55%;" +
         "left: 0;" +
         "right: 0;" +
         "margin-left: auto;" +
@@ -1573,6 +1753,8 @@ var SearchFormSingleton = function () {
         "border-width: 2px;" +
         "border-color: #0E4061;" +
         "border-radius: 10px;" +
+        "color: 404040;" +
+        "background-color: #FAFAFA;" +
         "";
     return obj;
 }
