@@ -19,6 +19,12 @@
             echo ("No function named \"" . $funcName . "\" was found");
         }
     }
+
+    function sanitize($str){
+        return str_replace("'", "''", $str);
+    }
+
+
     function getPhotoAll(){
         $ar = [];
         $ar['photo_list'] = [];
@@ -134,6 +140,22 @@
             $ar["moment"] = $row["moment"];
         }
        echo (json_encode($ar));
+    }
+
+    function changePhotoInfo(){
+        if(isset($_SESSION['user_id']) && isset($_GET['photo_id']) && isset($_GET['description'])) {
+            $db = get_db();
+            $sql = sprintf("
+                UPDATE photos
+                SET description='%s'
+                WHERE id in (
+                  SELECT photo_id
+                  FROM photoOwner
+                  WHERE photo_id=%s AND user_id=%s
+                );
+            ", sanitize($_GET['description']), $_GET['photo_id'], $_SESSION['user_id']);
+            $result = $db->query($sql);
+        }
     }
 
     function checkLogin()
@@ -272,6 +294,7 @@
                     WHERE id=%s
                 ", $_GET['photo_id']);
                 $result = $db->query($sql);
+                unlink($_GET['photo_id'] . ".jpg");
             }
         }
     }
@@ -413,6 +436,7 @@
                 $elem["description"] = $row["description"];
                 $elem["user_id"] = $row['user_id'];
                 $elem["moment"] = $row["moment"];
+                $elem['photo_id'] = $row['photo_id'];
                 $list[] = $elem;
             }
             $ar['commentList'] = $list;
@@ -446,5 +470,17 @@
         echo (json_encode($ar));
     }
 
+    function deleteComment(){
+        if(isset($_SESSION['user_id']) && isset($_GET['photo_id']) && isset($_GET['moment'])){
+            $db = get_db();
+            $sql = sprintf("
+                DELETE
+                FROM comments
+                WHERE user_id=%s AND photo_id=%s AND moment='%s';
+            ", $_SESSION['user_id'], $_GET['photo_id'], $_GET['moment']);
+            $result = $db->query($sql);
+            echo ($sql);
+        }
+    }
 
 ?>

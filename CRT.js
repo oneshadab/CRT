@@ -154,6 +154,7 @@ var Script = function (text = "") {
 
 var FrameFloatSingleton = function () {
     var out = this;
+    var done = false;
     var removeFrame = function () {
         if(out.inner_obj != null){
             root.remove(inner_obj);
@@ -161,7 +162,10 @@ var FrameFloatSingleton = function () {
         }
     };
     var transitionFrame = function () {
-        console.log("Transitioning");
+        console.log("hello");
+        if(done == false){
+            //setTimeout(transitionFrame, 1000);
+        }
 
     };
     addEventTrigger("FrameClose", removeFrame);
@@ -194,21 +198,26 @@ var FrameFloatSingleton = function () {
         obj.attr["onMouseOver"] = 'this.getElementsByClassName("removeButton")[0].style["display"] = "block";';
         obj.attr["onMouseOut"] = 'this.getElementsByClassName("removeButton")[0].style["display"] = "none";';
         obj.insert(obj.removeButton);
+        done = false;
         out.inner_obj = obj;
         root.render();
-        //triggerEvent("FrameTransition");
+        triggerEvent("FrameTransition");
         return obj;
     })();
 };
 FrameFloatSingleton.inner_obj = null; // Static Variables
 
-var Photo = function(url){
+var Photo = function(url, photoWidth="", photoHeight=""){
     var obj = component();
     obj.tag = "img";
     obj.updatePhoto = function (_url) {
         obj.url = _url;
         obj.attr["src"] = obj.url;
+
     }
+    obj.attr["style"] += "" +
+        "width: " + photoWidth + ";" +
+        "height: " + photoHeight + ";";
     obj.updatePhoto(url);
     return obj;
 };
@@ -442,8 +451,10 @@ var PhotoStream = function(photoHeight = "auto", photoWidth = "100%"){
                 "margin: 0px auto;;" +
                 ";";
             obj.reset();
-            obj.insert(streamTitle);
-            obj.insertAll(photoList);
+            if(user.logged_in== "yes"){
+                obj.insert(streamTitle);
+                obj.insertAll(photoList);
+            }
             root.render();
         };
         var req = formatRequest({
@@ -644,7 +655,7 @@ var LoginForm  = function(){
         "method" : "POST",
         "enctype" : "multipart/form-data",
         "target" : "skipFrame",
-        "style" : "margin: 0px auto; width: 50%;"
+        "style" : "margin: 0px auto;;"
     };
     var email = (function(){
         var obj = component();
@@ -718,7 +729,7 @@ var RegisterForm  = function(){
         "method" : "POST",
         "enctype" : "multipart/form-data",
         "target" : "skipFrame",
-        "style" : "margin: 0px auto; width: 50%;"
+        "style" : "margin: 0px auto;"
     };
     var name = (function(){
         var obj = component();
@@ -804,24 +815,71 @@ var LoginBox = function(){
     btn.attr["style"] = "" +
         "float: right;" +
         "";
-    obj.insert(btn);
+    //obj.insert(btn);
+    btn.callback();
     return obj;
 };
 
 var LoginFloatBoxSingleton = function () {
     var obj = FrameFloatSingleton();
     addEventTrigger("LoginDone", obj.removeFrame);
-    obj.attr["style"] += "top:  55%;";
+    obj.attr["style"] += "" +
+        "margin: auto;" +
+        "position: relative;" +
+        "left: 0;" +
+        "right: 0;" +
+        "" +
+        "top: 250px;";
     obj.attr["style"] += "height:  400px;";
+    obj.attr["style"] += "width:  60%;";
     obj.attr["style"] += "margin-top: -250px;";
     obj.attr["style"] += "padding: 20px;";
     obj.attr["style"] += "padding: 20px;";
     obj.attr["style"] += "border-width: 2px; border-style: solid; border-radius: 10px; " +
         "border-color: 	#525252";
-    obj.insert(Label("Login:"));
-    obj.insert(LoginForm());
-    obj.insert(Label("Register:"));
-    obj.insert(RegisterForm());
+    var welcomeLabel = (function () {
+        var lbl = Label("Welcome");
+        lbl.attr["style"] += "" +
+            "position: relative;" +
+            "margin: 0 auto;" +
+            "left: 0;" +
+            "right: 0;" +
+            "text-align: center;" +
+            "font-size: 48px;" +
+            "display: block;" +
+            ""
+        return lbl;
+    })();
+    var loginDiv = (function () {
+        var obj = component();
+        obj.tag = "div";
+        obj.insert(Label("Login:", "font-size: 24px;"));
+        obj.insert(LoginForm());
+        obj.attr["style"] += "" +
+            "float: left;" +
+            "margin: 100px;" +
+            "margin-left: 15%;" +
+            "margin-right: 0px;" +
+            ""
+        return obj;
+    })();
+    var registerDiv = (function () {
+        var obj = component();
+        obj.tag = "div";
+        obj.insert(Label("Register:", "font-size: 24px;"));
+        obj.insert(RegisterForm());
+        obj.attr["style"] += "" +
+            "float: right;" +
+            "margin: 100px;" +
+            "margin-left: 0px;" +
+            "margin-right: 15%;;" +
+            "" +
+            "";
+        return obj;
+    })();
+    obj.insert(welcomeLabel);
+    obj.insert(loginDiv);
+    obj.insert(registerDiv);
     return obj;
 };
 
@@ -1012,7 +1070,7 @@ var ProfileBox = function(name, avatar) {
             "position: absolute;" +
             "display: inline-flex;" +
             "bottom: -5px;" +
-            "margin-left: 10%;" +
+            "margin-left: 12%;" +
             "left: 0;;" +
             "width: 110px;" +
             "right: 0;" +
@@ -1133,7 +1191,7 @@ var ProfileBox = function(name, avatar) {
         obj.insert(settingsButton);
         obj.insert(searchButton);
         obj.attr["style"] += "" +
-            "width: 55%;" +
+            "width: 56.5%;" +
             "float: right;" +
             "padding-right: 10px;";
 
@@ -1188,10 +1246,7 @@ var SessionBox = function () {
             if (user.logged_in == "yes") {
                 obj.reset();
                 var userBox = ProfileBox(user.name, user.avatar);
-
                 obj.insert(userBox);
-
-
                 triggerEvent("LoginDone");
                 root.update();
                 cleanup(true);
@@ -1212,10 +1267,41 @@ var TranslucentContainer = function () {
 
 }
 
-var Comment = function (_id, _text) {
-    var text = _text;
-    var id = _id;
+var showDeleteButton = function (parent) {
+    var d = parent.getElementsByClassName("deleteButton")[0];
+    d.style.display = "block";
+};
+var hideDeleteButton = function (parent) {
+    var d = parent.getElementsByClassName("deleteButton")[0];
+    d.style.display = "none";
+};
+
+var Comment = function (_commentRes) {
+    var text = _commentRes.description;
+    var id = _commentRes.user_id;
     var obj = component();
+    var deleteButton = (function () {
+        var btn = Button("", function () {
+            var req = formatRequest({
+                "methodName" : "deleteComment",
+                "photo_id" : _commentRes.photo_id,
+                "moment" : _commentRes.moment,
+            });
+            var callback = function (res) {
+                root.update();
+            };
+            sendRequest("GET", req, callback);
+        });
+        btn.insert(Photo("removeButtonAlt.jpg", "14px", "14px"));
+        btn.attr["style"] += "" +
+            "display: none;" +
+            "float: right;" +
+            "background-color: #fff;" +
+            "border-width: 0px;" +
+            "";
+        btn.attr["class"] = "deleteButton";
+        return btn;
+    })();
     var avatarBox = (function () {
         var obj = AvatarBox(id, "32px", "32px");
         //console.log(obj);
@@ -1240,6 +1326,9 @@ var Comment = function (_id, _text) {
     obj.attr["style"] += "" +
         "font-size: 14px;" +
         "left: 32px;";
+    obj.attr["onmouseover"] = 'showDeleteButton(this);'
+    obj.attr["onmouseout"] = 'hideDeleteButton(this);'
+    obj.insert(deleteButton);
     obj.insert(avatarBox);
     obj.insert(textBox);
     return obj;
@@ -1264,7 +1353,7 @@ var CommentStream = function (photoID) {
         var callback = function (res) {
             var tar = JSON.parse(res.responseText);
             var commentList = tar.commentList.map(function (comment) {
-                return Comment(comment.user_id, comment.description);
+                return Comment(comment);
             });
             obj.reset();
             //obj.insert(commentLabel);
@@ -1368,6 +1457,43 @@ var CommentForm = function (photoID) {
 var PhotoDetails = function (photoID) {
     var obj = component();
     obj.tag = "div";
+    obj.description = "";
+    obj.descriptionBox = component();
+    obj.descriptionBox.attr["readonly"] = "readonly"
+    obj.moment = "";
+    obj.editMode = "On";
+    obj.toggleEdit = function () {
+        if(obj.editMode == "On") {
+            obj.setEditOff();
+        }
+        else {
+            obj.setEditOn();
+        }
+    };
+    obj.setEditOn = function () {
+        delete obj.descriptionBox.attr.readonly;
+        obj.descriptionBox.attr["style"] = "" +
+            "outline: ;" +
+            "margin-top: 10px;" +
+            "height: 70px;" +
+            "font-size: 16px;" +
+            "border-width: 1px;" +
+            "resize: none;" +
+            "width: 95%;";
+        obj.editMode = "On";
+    };
+    obj.setEditOff = function () {
+        obj.descriptionBox.attr["readonly"] = "readonly";
+        obj.descriptionBox.attr["style"] = "" +
+            "outline: none;" +
+            "margin-top: 10px;" +
+            "height: 70px;" +
+            "font-size: 16px;" +
+            "border-width: 0px;" +
+            "resize: none;" +
+            "width: 95%;" ;
+        obj.editMode = "Off";
+    };
     obj.updatePhotoDetails = function () {
         var req = formatRequest({
             "methodName" : "getPhotoInfo",
@@ -1375,9 +1501,19 @@ var PhotoDetails = function (photoID) {
         });
         var callback = function (res) {
             var tar = JSON.parse(res.responseText);
+            obj.description = tar.description;
+            obj.descriptionBox = (function(){
+                var txt = component();
+                txt.tag = "textarea";
+                txt.content = obj.description;
+                txt.attr["class"] = "PhotoDetailTextArea";
+                return txt;
+            })();
+            obj.moment = Paragraph(tar.moment, "font-size: 11px;");
             obj.reset();
-            obj.insert(Paragraph(tar.description, "height: 60px;"));
-            obj.insert(Paragraph(tar.moment, "font-size: 11px;"));
+            obj.insert(obj.descriptionBox);
+            obj.insert(obj.moment);
+            obj.setEditOff();
             root.render();
         };
         sendRequest("GET", req, callback);
@@ -1393,6 +1529,7 @@ var PhotoFrameFloatSingleton = function (_url, _photoID, _userID) {
     var url = _url;
     var photoID = _photoID;
     var userID = _userID;
+    var photoDetails = PhotoDetails(photoID);
     var deleteButton = (function () {
         var btn = Button("Delete", function () {
             var callback = function (res) {
@@ -1412,9 +1549,51 @@ var PhotoFrameFloatSingleton = function (_url, _photoID, _userID) {
             "padding: 8px;" +
             "margin-bottom: 5px;" +
             "margin-top: 2px;" +
+            "margin-right: 4px;" +
             "vertical-align: middle;" +
             "border-radius: 5px;" +
-            "display: inline-block;";
+            "display: inline-block;" +
+            "float: right;";
+        return btn;
+    })();
+    var editButton = (function () {
+        var btn = Button("Edit", function () {
+            photoDetails.toggleEdit();
+            if(photoDetails.editMode=="On"){
+                btn.content = "Done";
+            }
+            else{
+                var ar = document.getElementsByClassName("PhotoDetailTextArea");
+                var d = ar[ar.length - 1];
+                photoDetails.description = d.value;
+                var req = formatRequest({
+                    "methodName" : "changePhotoInfo",
+                    "photo_id" : photoID,
+                    "description" : photoDetails.description
+                });
+                var callback = function (res) {
+                    console.log(res.responseText);
+                    photoDetails.updatePhotoDetails();
+                    root.update();
+                };
+                sendRequest("GET", req, callback);
+                btn.content = "Edit";
+            }
+            root.render();
+
+        });
+        btn.attr['style'] += "" +
+            "display: inline-block;" +
+            "width: 60px;" +
+            "padding: 8px;" +
+            "background-color: #082D3F;" +
+            "color: #fff;" +
+            "border-radius: 5px;" +
+            "font-weight: bold;" +
+            "float: right;" +
+            "margin-top: 2px;" +
+            "margin-bottom: 5px;" +
+            "";
         return btn;
     })();
     var likeLabel = (function () {
@@ -1554,10 +1733,13 @@ var PhotoFrameFloatSingleton = function (_url, _photoID, _userID) {
             "" +
             "";
         obj.insert(AVBox);
-        obj.insert(PhotoDetails(photoID));
+        obj.insert(photoDetails);
         obj.insert(likeLabel);
         obj.insert(likeButton);
-        obj.insert(deleteButton);
+        if(user.id == userID) {
+            obj.insert(deleteButton);
+            obj.insert(editButton);
+        }
         obj.insert(CommentStream(photoID));
         obj.insert(commentForm);
         return obj;
@@ -1568,7 +1750,7 @@ var PhotoFrameFloatSingleton = function (_url, _photoID, _userID) {
         "max-width: 1000px;" +
         "height: 520px;" +
         "margin: auto;" +
-        ";" +
+        "top: 15%;;" +
         "left: 0;" +
         "right: 0;" +
         "";
