@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 21, 2016 at 08:57 PM
+-- Generation Time: Dec 26, 2016 at 11:16 AM
 -- Server version: 10.1.13-MariaDB
 -- PHP Version: 5.6.20
 
@@ -38,15 +38,27 @@ CREATE TABLE `comments` (
 --
 
 INSERT INTO `comments` (`user_id`, `photo_id`, `moment`, `description`) VALUES
+(1, 30, '2016-12-25 19:24:53', '???'),
 (1, 62, '2016-12-21 13:02:54', 'yes'),
-(1, 73, '2016-12-21 12:47:32', 'what?'),
-(1, 73, '2016-12-21 13:02:03', 'ha'),
-(1, 73, '2016-12-21 13:02:07', 'a'),
-(1, 74, '0000-00-00 00:00:00', 'hello'),
-(1, 74, '2016-12-21 12:06:18', 'ad'),
-(1, 74, '2016-12-21 12:06:29', 'world'),
-(1, 74, '2016-12-21 13:02:44', 'ha'),
-(1, 75, '2016-12-21 13:21:31', 'as');
+(1, 68, '2016-12-24 15:30:15', 'Yes, another Comment :D'),
+(1, 81, '2016-12-22 20:14:21', 'Hey Comment :D'),
+(1, 81, '2016-12-23 07:28:22', 'another comment!!'),
+(1, 82, '2016-12-22 19:50:11', 'hey'),
+(1, 82, '2016-12-22 19:50:42', 'hello'),
+(1, 82, '2016-12-22 20:03:16', 'why'),
+(1, 82, '2016-12-22 20:03:20', 'hello'),
+(1, 82, '2016-12-22 20:03:26', 'there'),
+(1, 82, '2016-12-22 20:03:30', 'mister'),
+(1, 82, '2016-12-22 20:03:34', 'maroon'),
+(1, 82, '2016-12-23 07:00:43', 'why'),
+(1, 82, '2016-12-23 07:00:46', 'arent'),
+(1, 82, '2016-12-23 07:00:50', 'you'),
+(1, 82, '2016-12-23 07:00:52', 'here'),
+(1, 82, '2016-12-23 07:00:54', 'yet'),
+(1, 82, '2016-12-23 07:00:57', 'ohhh'),
+(1, 82, '2016-12-25 20:42:21', '456'),
+(4, 81, '2016-12-23 08:02:51', 'and lunch :D'),
+(4, 82, '2016-12-23 08:00:56', 'here I am');
 
 -- --------------------------------------------------------
 
@@ -66,8 +78,52 @@ CREATE TABLE `follows` (
 INSERT INTO `follows` (`follower_id`, `following_id`) VALUES
 (1, 1),
 (1, 4),
+(1, 5),
+(3, 3),
 (4, 1),
-(4, 4);
+(4, 4),
+(4, 5),
+(5, 4),
+(5, 5),
+(7, 7);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `likes`
+--
+
+CREATE TABLE `likes` (
+  `user_id` int(11) NOT NULL,
+  `photo_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `likes`
+--
+
+INSERT INTO `likes` (`user_id`, `photo_id`) VALUES
+(1, 29),
+(1, 30),
+(1, 68),
+(1, 74),
+(1, 79),
+(1, 80),
+(1, 81),
+(1, 82),
+(1, 83),
+(1, 86),
+(1, 87),
+(1, 88),
+(3, 80),
+(3, 81),
+(4, 68),
+(4, 81),
+(4, 86),
+(5, 67),
+(5, 68),
+(5, 75),
+(5, 81);
 
 -- --------------------------------------------------------
 
@@ -93,18 +149,17 @@ INSERT INTO `photoowner` (`user_id`, `photo_id`) VALUES
 (0, 70),
 (0, 71),
 (0, 72),
-(1, 73),
-(1, 74),
-(1, 75),
-(1, 77),
-(1, 78),
-(1, 79),
-(1, 80),
+(0, 92),
+(0, 93),
+(0, 94),
+(0, 95),
+(0, 97),
+(0, 98),
 (1, 81),
+(1, 82),
 (4, 25),
 (4, 26),
 (4, 27),
-(4, 67),
 (4, 68),
 (5, 29),
 (5, 30),
@@ -182,19 +237,27 @@ INSERT INTO `photos` (`id`, `description`, `moment`) VALUES
 (65, '''''', '2016-12-21 13:19:12'),
 (66, '''''', '2016-12-21 13:19:12'),
 (67, '''''', '2016-12-21 13:19:12'),
-(68, '''''', '2016-12-21 13:19:12'),
+(68, '#hello', '2016-12-21 13:19:12'),
 (69, '''''', '2016-12-21 13:19:12'),
 (70, '''''', '2016-12-21 13:19:12'),
 (71, '''''', '2016-12-21 13:19:12'),
 (72, '''''', '2016-12-21 13:19:12'),
-(73, '''''', '2016-12-21 13:19:12'),
 (74, '''''', '2016-12-21 13:19:12'),
 (75, '''DDDDD''', '2016-12-21 13:19:12'),
-(77, '''''', '2016-12-21 16:00:32'),
-(78, '''''', '2016-12-21 16:00:44'),
 (79, '''''', '2016-12-21 16:01:08'),
-(80, 'Breakfast!!', '2016-12-21 16:07:48'),
-(81, 'Coffee :D', '2016-12-21 16:08:53');
+(80, '#hello', '2016-12-21 16:07:48'),
+(81, 'Coffee :D', '2016-12-21 16:08:53'),
+(82, '', '2016-12-22 19:30:54'),
+(83, 'Better Not even describing it....', '2016-12-25 14:04:26'),
+(86, '', '2016-12-25 17:15:44'),
+(87, '', '2016-12-25 17:15:55'),
+(88, 'DDDDJKFNSDKJFN :D', '2016-12-25 19:05:44'),
+(92, '', '2016-12-25 19:33:48'),
+(93, '', '2016-12-25 19:34:01'),
+(94, '', '2016-12-25 19:34:09'),
+(95, '', '2016-12-25 19:36:55'),
+(97, '', '2016-12-26 09:58:38'),
+(98, '', '2016-12-26 10:01:28');
 
 -- --------------------------------------------------------
 
@@ -216,12 +279,11 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `name`, `email`, `pass`, `avatar`) VALUES
 (0, 'admin', 'admin@admin.com', '1234', 'test_pro_pic'),
-(1, 'Han Solo', 'han@solo.com', '1234', '72'),
-(2, 'hello', 'hello@world.com', 'world', 'test_pro_pic'),
-(3, 'dead', 'man', 'walking', 'test_pro_pic'),
-(4, 'Ami Gadh', 'ami@gadha.com', '1234', '70'),
-(5, 'Fahima Akter', 'f@h.com', '1234', 'test_pro_pic'),
-(7, 'my@me', 'me@mail', '1234', '40');
+(1, 'Han Solo', 'han@solo.com', '1234', '95'),
+(3, 'Homer', 'man', 'walking', '98'),
+(4, 'Ami Gadha', 'ami@gadha.com', '1234', '70'),
+(5, 'Fahim', 'f@h.com', '1234', '97'),
+(7, 'Nazia', 'me@mail', '1234', '40');
 
 --
 -- Indexes for dumped tables
@@ -240,6 +302,13 @@ ALTER TABLE `comments`
 ALTER TABLE `follows`
   ADD PRIMARY KEY (`follower_id`,`following_id`),
   ADD KEY `following_id` (`following_id`);
+
+--
+-- Indexes for table `likes`
+--
+ALTER TABLE `likes`
+  ADD PRIMARY KEY (`user_id`,`photo_id`),
+  ADD KEY `photo_id` (`photo_id`);
 
 --
 -- Indexes for table `photoowner`
@@ -268,7 +337,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `photos`
 --
 ALTER TABLE `photos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=82;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100;
 --
 -- AUTO_INCREMENT for table `users`
 --
@@ -291,6 +360,13 @@ ALTER TABLE `comments`
 ALTER TABLE `follows`
   ADD CONSTRAINT `follows_ibfk_1` FOREIGN KEY (`follower_id`) REFERENCES `users` (`id`),
   ADD CONSTRAINT `follows_ibfk_2` FOREIGN KEY (`following_id`) REFERENCES `users` (`id`);
+
+--
+-- Constraints for table `likes`
+--
+ALTER TABLE `likes`
+  ADD CONSTRAINT `likes_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  ADD CONSTRAINT `likes_ibfk_2` FOREIGN KEY (`photo_id`) REFERENCES `photos` (`id`);
 
 --
 -- Constraints for table `photoowner`

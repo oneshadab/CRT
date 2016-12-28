@@ -49,7 +49,8 @@
                       FROM follows
                       WHERE follower_id=%s
                   )
-                  ORDER BY photo_id DESC;
+                  ORDER BY photo_id DESC
+                  LIMIT 30;
                 ", $_SESSION['user_id']);
             }
             $result = $db->query($sql);
@@ -96,7 +97,8 @@
     }
 
     function get_db(){
-        $db = new mysqli("localhost", "CRT_USER", "1234", "CRT_DB");
+        $db = new mysqli("localhost", "CRTUSER", "1234abc!", "CRTDB");
+        if(!$db) $db = new mysqli("mysql3.gear.host", "CRTUSER", "1234abc!", "CRTDB");
         return $db;
     }
 
@@ -130,7 +132,7 @@
             $db = get_db();
             $sql = sprintf("
                 SELECT *
-                FROM photos
+                FROM photos join photoOwner on (photos.id=photoOwner.photo_id)
                 WHERE id=%s
             ", $_GET['photo_id']);
             $result = $db->query($sql);
@@ -138,6 +140,8 @@
             $ar["id"] = $row["id"];
             $ar["description"] = $row["description"];
             $ar["moment"] = $row["moment"];
+            $ar['user_id'] = $row['user_id'];
+            $ar['url'] = $row['id'] . ".jpg";
         }
        echo (json_encode($ar));
     }

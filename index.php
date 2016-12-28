@@ -1,3 +1,11 @@
+<?php
+    $profile = 'false';
+    $photo = 'false';
+    if(isset($_GET['p'])) $profile = $_GET['p'];
+    if(isset($_GET['i'])) $photo = $_GET['i'];
+    $load_str = sprintf("main(%s,%s);", $profile, $photo);
+?>
+
 <html>
 
 <head>
@@ -31,7 +39,8 @@
     </style>
 </head>
 
-<body onload="main()">
+
+<body onload=<?php echo($load_str) ?> >
     <div id="root" style="background-color: inherit;">
 
     </div>

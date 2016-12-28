@@ -55,7 +55,9 @@ var showPage = function(url){
 };
 
 var component = function(){
+    component.autoGenId += 1;
     return{
+        genId: component.autoGenId,
         DOMREF: null,
         parent: null,
         innerHTML: "",
@@ -64,11 +66,15 @@ var component = function(){
         children: [],
         content: "",
         updateList: [],
+        displayFlag: "",
         render: function(){
             var ret = "";
             ret += "<" + this.tag;
+            ret += ' id="genId' + this.genId + '"';
             for(key in this.attr){
-                ret += " " + key + "=" + "'" + this.attr[key] + "'";
+                ret += " " + key + "=" + "'" + this.attr[key];
+                if(key == "style") ret += ";display: " + this.displayFlag + ";";
+                ret += "'";
             }
             ret += ">";
             for(i in this.children){
@@ -79,6 +85,17 @@ var component = function(){
             this.innerHTML = ret;
             if(this.DOMREF != null) this.DOMREF.innerHTML = this.innerHTML;
             return this.innerHTML;
+        },
+        setDisplay: function (flag) {
+            if(flag == false)
+                this.displayFlag = "none";
+            else
+                this.displayFlag = "";
+        },
+        setDisplayDOMREF : function (flag) {
+            this.setDisplay(flag);
+            var d = document.getElementById("genId" + this.genId);
+            d.style = this.attr["style"] + ";display: " + this.displayFlag + ";";
         },
         dbgShow: function(){
             console.log(this.children);
@@ -119,9 +136,20 @@ var component = function(){
         },
         getAllChildren: function (x) {
             return this.children;
-        }
+        },
+        setHoverEvent: function (_overFunc, _outFunc) {
+            addEventTrigger("mouseEnterEvent" + this.genId, _overFunc);
+            addEventTrigger("mouseLeaveEvent" + this.genId, _outFunc);
+            this.attr["onmouseenter"] = 'triggerEvent("mouseEnterEvent' + this.genId + '");';
+            this.attr["onmouseleave"] = 'triggerEvent("mouseLeaveEvent' + this.genId + '");';
+        },
+
+
+
+
     };
 };
+component.autoGenId = 0;
 
 var CenterFloatObject = function (){
     var obj = component();
@@ -151,6 +179,49 @@ var Script = function (text = "") {
     return obj;
 };
 
+var HashTag = function (text) {
+    var obj = component();
+    obj.tag = "a";
+    obj.attr["href"] = "#";
+    obj.attr["style"] = "" +
+        "text-decoration: none;" +
+        "";
+    obj.content = text;
+    return obj;
+}
+
+var formatForTags = function (str) {
+    var out = "";
+    var buff = "";
+    str += " ";
+    for(var i = 0; i < str.length; i++){
+        buff += str[i];
+        if(str[i] == " "){
+            if(buff[0] == "#"){
+                console.log(buff);
+                buff = HashTag(buff).render();
+            }
+            out += buff;
+            buff = "";
+        }
+    }
+    console.log(out);
+    return out;
+}
+
+var getEncode = function (str) {
+    var out = "";
+    var buff = "";
+    str += " ";
+    for(var i = 0; i < str.length; i++){
+        if(str[i] != "#")
+            buff += str[i];
+        else
+            buff += "%23";
+    }
+    out += buff;
+    return out;
+}
 
 var FrameFloatSingleton = function () {
     var out = this;
@@ -304,6 +375,11 @@ var PhotoStream = function(photoHeight = "auto", photoWidth = "100%"){
     };
     obj.setProfileId = function (val) {
         obj.profileID = val;
+        if(obj.profileID != -1)
+            window.history.replaceState("", "", "?p=" + obj.profileID);
+
+        else
+            window.history.replaceState("", "", "?");
         scroll(0, 0);
     }
     obj.updateStream = function () {
@@ -450,10 +526,27 @@ var PhotoStream = function(photoHeight = "auto", photoWidth = "100%"){
             streamTitle.attr["style"] += "" +
                 "margin: 0px auto;;" +
                 ";";
+            var emptyListLabel = (function () {
+                var lbl = Label("No Posts to Show...");
+                lbl.attr["style"] += "" +
+                    "display: block;" +
+                    "position: relative;" +
+                    "margin: 10px auto;" +
+                    "left: 0;" +
+                    "right: 0;" +
+                    "text-align: center;" +
+                    "margin-top: 100px;" +
+                    "font-size: 36px;";
+                return lbl;
+            })();
+
             obj.reset();
             if(user.logged_in== "yes"){
                 obj.insert(streamTitle);
                 obj.insertAll(photoList);
+                if(photoList.length == 0){
+                    obj.insert(emptyListLabel);
+                }
             }
             root.render();
         };
@@ -619,14 +712,13 @@ var redirect = function(newLocation){
 
 
 var Button = function(text, callback){
-    Button.eventNumber += 1;
     var obj = component();
     obj.tag = "button";
     obj.content = text;
     obj.callback = callback;
-    obj.eventID = "ButtonClick" + Button.eventNumber;
+    obj.eventID = "ButtonClick" + obj.genId;
     addEventTrigger(obj.eventID, obj.callback);
-    obj.attr = {"onClick" : 'triggerEvent("ButtonClick' + Button.eventNumber + '")', "style" : ""};
+    obj.attr = {"onClick" : 'triggerEvent("ButtonClick' + obj.genId + '")', "style" : ""};
     var tempStyle = "display: block; margin-bottom: 10px; " +
         "padding: 2px;" +
         "height: 30px;" +
@@ -638,7 +730,6 @@ var Button = function(text, callback){
     obj.attr["style"] += tempStyle;
     return obj
 };
-Button.eventNumber = 0; //Static Variables
 
 var LoginForm  = function(){
     var obj = component();
@@ -1116,7 +1207,7 @@ var ProfileBox = function(name, avatar) {
                 "background-color: #D9534F;" +
                 "margin-left: 10px;" +
             "border-right-width: 0px;",
-            "onClick" : "SBox.checkLogin();"
+            "onSubmit" : "SBox.checkLogin();"
         };
         return obj;
     })();
@@ -1153,14 +1244,43 @@ var ProfileBox = function(name, avatar) {
         return btn;
     })();
     var homeButton = (function () {
+        var box = (function () {
+            var obj = component();
+            obj.tag = "div";
+            obj.insert(Label("Label: HOV"));
+            obj.attr["style"] += "" +
+                "position: absolute;" +
+                "top: 100%;" +
+                "width: 100px;" +
+                "height: 100px;" +
+                "background-color: #fff;" +
+                "color: #AFAFAF;" +
+                "";
+            return obj;
+        })();
         var btn = Button("Home", function () {
             stream.setProfileId(-1);
             stream.updateStream();
+            //box.setDisplayDOMREF(true);
         });
+
+        box.setDisplay(false);
+        var overFunc = function () {
+            //box.setDisplayDOMREF(true);
+            //console.log(true);
+            //root.render();
+        }
+        var outFunc = function () {
+            box.setDisplayDOMREF(false);
+            //console.log(false);
+            //root.render();
+        }
+        btn.setHoverEvent(overFunc, outFunc);
         btn.attr["type"] = "button";
         btn.attr["style"] += tempStyle +
             "float: left;" +
             "";
+        btn.insert(box);
         return btn;
     })();
     var uploadButton = (function(){
@@ -1457,6 +1577,7 @@ var CommentForm = function (photoID) {
 var PhotoDetails = function (photoID) {
     var obj = component();
     obj.tag = "div";
+    obj.tar = {};
     obj.description = "";
     obj.descriptionBox = component();
     obj.descriptionBox.attr["readonly"] = "readonly"
@@ -1494,14 +1615,14 @@ var PhotoDetails = function (photoID) {
             "width: 95%;" ;
         obj.editMode = "Off";
     };
-    obj.updatePhotoDetails = function () {
+    obj.updatePhotoDetails = function (cleanup = function () {}) {
         var req = formatRequest({
             "methodName" : "getPhotoInfo",
             "photo_id" : photoID,
         });
         var callback = function (res) {
-            var tar = JSON.parse(res.responseText);
-            obj.description = tar.description;
+            obj.tar = JSON.parse(res.responseText);
+            obj.description = obj.tar.description;
             obj.descriptionBox = (function(){
                 var txt = component();
                 txt.tag = "textarea";
@@ -1509,12 +1630,13 @@ var PhotoDetails = function (photoID) {
                 txt.attr["class"] = "PhotoDetailTextArea";
                 return txt;
             })();
-            obj.moment = Paragraph(tar.moment, "font-size: 11px;");
+            obj.moment = Paragraph(obj.tar.moment, "font-size: 11px;");
             obj.reset();
             obj.insert(obj.descriptionBox);
             obj.insert(obj.moment);
             obj.setEditOff();
             root.render();
+            cleanup();
         };
         sendRequest("GET", req, callback);
     };
@@ -1569,10 +1691,10 @@ var PhotoFrameFloatSingleton = function (_url, _photoID, _userID) {
                 var req = formatRequest({
                     "methodName" : "changePhotoInfo",
                     "photo_id" : photoID,
-                    "description" : photoDetails.description
+                    "description" : getEncode(photoDetails.description)
                 });
                 var callback = function (res) {
-                    console.log(res.responseText);
+                    console.log("res " + req + " = " + res.responseText);
                     photoDetails.updatePhotoDetails();
                     root.update();
                 };
@@ -1614,7 +1736,7 @@ var PhotoFrameFloatSingleton = function (_url, _photoID, _userID) {
             }
             sendRequest("GET", req, callback);
         });
-        btn.attr["style"] = "" +
+        btn.attr["style"] =
             "top: 50%;" +
             "display: inline-block;" +
             "padding: 6px;" +
@@ -1636,6 +1758,8 @@ var PhotoFrameFloatSingleton = function (_url, _photoID, _userID) {
             "border-color: #3897f0;" +
             "border-radius: 5px;" +
             "color: #fff;";
+        btn.attr["style"] = styleLike;
+
         btn.checkLiked = function () {
             var req = formatRequest({
                 "methodName": "checkLikePhoto",
@@ -1742,6 +1866,7 @@ var PhotoFrameFloatSingleton = function (_url, _photoID, _userID) {
         }
         obj.insert(CommentStream(photoID));
         obj.insert(commentForm);
+        //obj.setDisplay(false);
         return obj;
     })();
     obj.attr['style'] += "" +
@@ -1921,7 +2046,7 @@ var SearchForm = function (searchResultBox) {
 
     var searchButton = (function () {
         var btn = Button ("Search", function () {
-            searchTextValue = document.getElementById("SearchBox").value;
+            searchTextValue = document.getElementById("genId" + searchText.genId).value;
             var text = searchTextValue;
             var req = formatRequest({
                 "methodName" : "searchProfile",
@@ -2033,5 +2158,13 @@ var SearchFormSingleton = function () {
         "color: 404040;" +
         "background-color: #FAFAFA;" +
         "";
+    return obj;
+}
+
+
+var PopOver = function () {
+    var obj = component();
+    obj.tag = "div";
+    
     return obj;
 }
