@@ -92,8 +92,22 @@ var component = function(){
             else
                 this.displayFlag = "";
         },
+        toggleDisplay: function () {
+            if(this.displayFlag == "none"){
+                this.displayFlag = "";
+            }
+            else{
+                this.displayFlag = "none";
+            }
+        },
         setDisplayDOMREF : function (flag) {
             this.setDisplay(flag);
+            var d = document.getElementById("genId" + this.genId);
+            d.style = this.attr["style"] + ";display: " + this.displayFlag + ";";
+        },
+        toggleDisplayDOMREF: function () {
+            //console.log(this);
+            this.toggleDisplay();
             var d = document.getElementById("genId" + this.genId);
             d.style = this.attr["style"] + ";display: " + this.displayFlag + ";";
         },
@@ -182,11 +196,20 @@ var Script = function (text = "") {
 var HashTag = function (text) {
     var obj = component();
     obj.tag = "a";
-    obj.attr["href"] = "#";
+    obj.attr["href"] = "#/";
     obj.attr["style"] = "" +
         "text-decoration: none;" +
+        "color: #3897f0;" +
         "";
+    obj.eventID = "HashEvent" + obj.genId;
+    addEventTrigger(obj.eventID, function () {
+        stream.setTag("true", text);
+        stream.updateStream();
+        triggerEvent("FrameClose");
+    });
+    obj.attr["onclick"] = 'triggerEvent("' + obj.eventID + '");'
     obj.content = text;
+
     return obj;
 }
 
@@ -195,17 +218,17 @@ var formatForTags = function (str) {
     var buff = "";
     str += " ";
     for(var i = 0; i < str.length; i++){
-        buff += str[i];
         if(str[i] == " "){
-            if(buff[0] == "#"){
-                console.log(buff);
+            if(buff.length > 0 && buff[0] == "#"){
                 buff = HashTag(buff).render();
             }
-            out += buff;
+            out += buff + " ";
             buff = "";
         }
+        else{
+            buff += str[i];
+        }
     }
-    console.log(out);
     return out;
 }
 
@@ -233,7 +256,6 @@ var FrameFloatSingleton = function () {
         }
     };
     var transitionFrame = function () {
-        console.log("hello");
         if(done == false){
             //setTimeout(transitionFrame, 1000);
         }
@@ -293,12 +315,10 @@ var Photo = function(url, photoWidth="", photoHeight=""){
     return obj;
 };
 
-
-
 var formatRequest = function(list){
     var head = "handleRequest.php?";
     for(key in list){
-        head += "&" + key + "=" + list[key];
+        head += "&" + key + "=" + encodeURIComponent(list[key]);
     }
     return head;
 };
@@ -319,7 +339,7 @@ var AvatarPhoto = function (_id, photoHeight = "100%", photoWidth = "100%") {
             var profile = JSON.parse(res.responseText);
             obj.name = profile.name;
             obj.updatePhoto(profile.avatar);
-            obj.attr["onClick"] = "stream.setProfileId(" + id + ");stream.updateStream();";
+            obj.attr["onClick"] = 'stream.setProfileId(' + id + ');stream.setTag("false");stream.updateStream();';
             root.render();
             cleanup();
         }
@@ -367,8 +387,13 @@ var AvatarBox = function (_id, photoHeight = "100%", photoWidth = "100%") {
 var PhotoStream = function(photoHeight = "auto", photoWidth = "100%"){
     var obj = component();
     var sup = obj;
+    obj.title = "Home";
+    obj.lastUpdate = 0;
+    obj.typeTag = 'false';
+    obj.tagName = "";
     obj.profileID = null;
     obj.tag = "div";
+
     obj.attr = { // Temporary styles
         "style" : "margin: 100 auto; width: 50%;" +
             "margin-top: 90px;"
@@ -381,11 +406,28 @@ var PhotoStream = function(photoHeight = "auto", photoWidth = "100%"){
         else
             window.history.replaceState("", "", "?");
         scroll(0, 0);
-    }
+        obj.lastUpdate = 0;
+    };
+    obj.setTitle = function(txt = false){
+        if(txt != false)
+            obj.title = txt;
+        else
+            obj.title = "Home";
+    };
+    obj.setTag = function (typeTag = "false", tagName = "") {
+        obj.typeTag = typeTag;
+        obj.tagName = tagName;
+        if(typeTag != "false")
+            obj.setTitle("Results for " + tagName + ": ");
+        else
+            obj.setTitle(false);
+        scroll(0, 0);
+        obj.lastUpdate = 0;
+    };
     obj.updateStream = function () {
         if(obj.profileID == null){
             if(user.hasOwnProperty("id") == false) return;
-            obj.profileID = user["id"];
+            obj.setProfileId(user["id"])    ;
         }
         root.render();
         var callback = function (res) {
@@ -420,12 +462,13 @@ var PhotoStream = function(photoHeight = "auto", photoWidth = "100%"){
                 return PhotoBox(avatar, name, photo, elem.photo_id, elem.id);
             });
             //console.log(photoList);
+            obj.lastUpdate = resJSON["last_update"];
             var streamTitle = component();
-            if(obj.profileID == -1) {
+            if(obj.profileID == -1 || obj.typeTag != "false") {
                 streamTitle = (function () {
                     var obj = component();
                     obj.tag = "div";
-                    var head = Heading("Home");
+                    var head = Heading(sup.title);
                     head.attr["style"] += "" +
                         "text-align: center;" +
                         "";
@@ -539,6 +582,22 @@ var PhotoStream = function(photoHeight = "auto", photoWidth = "100%"){
                     "font-size: 36px;";
                 return lbl;
             })();
+            var loadMoreButton = (function () {
+                var btn = Button("Load More", function () {
+                    obj.updateStream();
+                });
+                btn.attr["style"] += "" +
+                    "position: relative;" +
+                    "margin: auto;" +
+                    "left: 0px;" +
+                    "right: 0px;" +
+                    "height: 36px;" +
+                    "width: 100px;" +
+                    "color: #fff;" +
+                    "background-color: #3897f0;" +
+                    "border-radius: 5px;";
+                return btn;
+            })();
 
             obj.reset();
             if(user.logged_in== "yes"){
@@ -547,12 +606,23 @@ var PhotoStream = function(photoHeight = "auto", photoWidth = "100%"){
                 if(photoList.length == 0){
                     obj.insert(emptyListLabel);
                 }
+                else if(obj.lastUpdate != -1){
+                    obj.insert(loadMoreButton);
+                }
+
+            }
+            if(obj.lastUpdate == -1){
+                obj.lastUpdate = 0;
             }
             root.render();
         };
         var req = formatRequest({
             "methodName": "getPhotoAll",
             "profile_id" : obj.profileID,
+            "last_update" : obj.lastUpdate,
+            "typeTag" : obj.typeTag,
+            "tag_name" : obj.tagName,
+
         });
         sendRequest("GET", req, callback);
     }
@@ -620,10 +690,10 @@ var UploadForm = function(){
         obj.tag = "input";
         obj.attr = {
             "type" : "file",
-            "id" : "photoUploadBrowse",
+            "class" : "photoUploadBrowse",
             "name" : "photo",
             "value" : "",
-            "onchange" : 'document.getElementById("hiddenPhotoBrowseLabel").innerHTML=getFileName(this.value);',
+            "onchange" : 'document.getElementsByClassName("hiddenPhotoBrowseLabel")[0].innerHTML=getFileName(this.value);',
             "style" : "display: none;"
         };
         return obj;
@@ -634,13 +704,13 @@ var UploadForm = function(){
         });
         btn.hiddenLabel = (function() {
             var hiddenLabel = Label("Browse");
-            hiddenLabel.attr["id"] = "hiddenPhotoBrowseLabel";
-            hiddenLabel.attr["onclick"] = 'document.getElementById("photoUploadBrowse").click();';
+            hiddenLabel.attr["class"] = "hiddenPhotoBrowseLabel";
+            hiddenLabel.attr["onclick"] = 'document.getElementsByClassName("photoUploadBrowse")[0].click();';
             hiddenLabel.attr["style"] = "" +
                 "display: inline-block;" +
                 "width: 90%;;" +
-                "height: 85%;;" +
-                "margin:;" +
+                "height: 100%;;" +
+                "top:15px;" +
                 "margin-left: 5px;" +
                 "margin-right: 5px;" +
                 "text-overflow: ellipsis;" +
@@ -656,7 +726,8 @@ var UploadForm = function(){
         btn.attr["style"] += "" +
             "display: inline;" +
             "padding: 0px;" +
-            "padding-top: 15px;" +
+            "padding-top: 0px;" +
+            "line-height: 50px;" +
             "height: 50px;" +
             "width: 100px;" +
             "background-color: #70c050;" +
@@ -1040,7 +1111,7 @@ var SettingsForm  = function(){
         obj.tag = "input";
         obj.attr = {
             "type" : "password",
-            "placeholder" : "password",
+            "placeholder" : "[Leave Blank to Keep Unchanged]",
             "name" : "password",
             "style" : tempStyle,
         }
@@ -1082,7 +1153,6 @@ var SettingsForm  = function(){
             if (user.logged_in == "yes") {
                 name.attr["value"] = user.name;
                 email.attr["value"] = user.email;
-                password.attr["value"] = user.pass;
                 root.render();
             }
         });
@@ -1112,9 +1182,12 @@ var SettingsBoxFloatSingleton = function () {
         "border-width: 1px;" +
         "color: #404040;";
     var avatarForm = UploadForm();
-    avatarForm.button.attr["value"]="Change";
+    avatarForm.button.attr["value"]="Upload";
     avatarForm.tempName.attr["value"]="changeAvatar";
-    avatarForm.attr["style"] += "margin-top: 50px;padding-bottom: 50px; margin: 5px;";
+    avatarForm.attr["style"] += "" +
+        "margin-top: 50px;" +
+        "padding-bottom: 50px;" +
+        "margin: 5px;";
     var avatarLabel = Label("Profile Picture:");
     avatarLabel.attr["style"] += "" +
         "font-size: 16px;" +
@@ -1150,6 +1223,7 @@ var ProfileBox = function(name, avatar) {
         "method" : "POST",
         "enctype" : "multipart/form-data",
         "target" : "skipFrame",
+        "autocomplete" : "off",
         "style" : "margin: 0 auto;" +
             "padding-bottom: 10px;" +
             "height: 16px;" +
@@ -1163,7 +1237,7 @@ var ProfileBox = function(name, avatar) {
             "bottom: -5px;" +
             "margin-left: 12%;" +
             "left: 0;;" +
-            "width: 110px;" +
+            "width: 160px;" +
             "right: 0;" +
             "";
         return obj;
@@ -1175,8 +1249,9 @@ var ProfileBox = function(name, avatar) {
         obj.attr = {
             "href" : "index.php",
             "align" : "left",
-            "width" : "10px",
+            "width" : "30px",
             "style" : "" +
+            "width: 30px;" +
             "margin-left: 10px; " +
             "padding-top: 10px;" +
             "display:inline; " +
@@ -1202,10 +1277,11 @@ var ProfileBox = function(name, avatar) {
             "type" : "submit",
             "value" : "Logout",
             "style" : tempStyle +
+                "display: block;" +
                 "float:right;" +
                 "width: 100px;" +
-                "background-color: #D9534F;" +
-                "margin-left: 10px;" +
+                "background-color: ##082D3F;" +
+                "margin: 0px;" +
             "border-right-width: 0px;",
             "onSubmit" : "SBox.checkLogin();"
         };
@@ -1220,10 +1296,30 @@ var ProfileBox = function(name, avatar) {
         var btn = Button("Settings", func);
         btn.attr['type'] = "button";
         btn.attr["style"] = tempStyle +
+            "display: block;" +
             "float: right;" +
+            "margin: 0px;" +
+            "margin-top: 0px;" +
+            "";
+
+        //btn.setHoverEvent()
+        return btn;
+    })();
+    var followerButton = (function () {
+        var btn = Button("Followers", function () {
+            root.insert(FollowerListFrameFloatSingleton());
+            root.render();
+        });
+        btn.attr['type'] = "button";
+        btn.attr["style"] = tempStyle +
+            "display: block;" +
+            "float: right;" +
+            "margin: 0px;" +
+            "margin-top: 5px;" +
             "";
         return btn;
     })();
+
     var profileInfo = (function () {
         var obj = component();
         obj.tag = "div";
@@ -1232,55 +1328,69 @@ var ProfileBox = function(name, avatar) {
         obj.insert(profileName);
         return obj;
     })();
+
     var searchButton = (function () {
-        var btn = Button("Search", function () {
-            root.insert(SearchFormSingleton());
+        var btn = Button("", function () {
+            var txt = document.getElementById("genId" + searchTextArea.genId).value;
+            searchTextArea.attr["value"] = txt;
+            root.insert(SearchFormSingleton(txt));
             root.render();
         });
         btn.attr["type"] = "button";
         btn.attr["style"] += tempStyle +
             "float: right;" +
+            "width: 36px;" +
+            "margin-left: 0px;" +
+            "border-top-left-radius: 0px;" +
+            "border-bottom-left-radius: 0px;" +
             "";
+        btn.insert(Photo("searchIcon.png", "24px", "24px"));
         return btn;
     })();
+    var searchTextArea = (function () {
+        var obj = component();
+        obj.tag = "input";
+        obj.attr["contentEditable"] = "true;";
+        obj.attr["style"] += tempStyle +
+            "position: relative;" +
+            "top: -10px;" +
+            "margin-right: 0px;" +
+            "float: right;" +
+            "width: 200px;" +
+            "background-color: #fff;" +
+            "color: #082D3F;" +
+            "border-color: #dbdbdb;" +
+            "border-style: solid;" +
+            "border-width: 1px;" +
+            "height: 36px;" +
+            "border-top-right-radius: 0px;" +
+            "border-bottom-right-radius: 0px;" +
+            "";
+        obj.attr["onkeypress"] = 'if(event.keyCode == 13) {triggerEvent("' + searchButton.eventID + '"); return false;};'
+        return obj;
+    })();
+    var searchBar = (function () {
+        var obj = component();
+        obj.tag = "div";
+        obj.attr["style"] += "" +
+            "float: right;" +
+            ""
+        obj.insert(searchButton);
+        obj.insert(searchTextArea);
+
+        return obj;
+    })();
     var homeButton = (function () {
-        var box = (function () {
-            var obj = component();
-            obj.tag = "div";
-            obj.insert(Label("Label: HOV"));
-            obj.attr["style"] += "" +
-                "position: absolute;" +
-                "top: 100%;" +
-                "width: 100px;" +
-                "height: 100px;" +
-                "background-color: #fff;" +
-                "color: #AFAFAF;" +
-                "";
-            return obj;
-        })();
         var btn = Button("Home", function () {
             stream.setProfileId(-1);
+            stream.setTag("false");
             stream.updateStream();
-            //box.setDisplayDOMREF(true);
-        });
 
-        box.setDisplay(false);
-        var overFunc = function () {
-            //box.setDisplayDOMREF(true);
-            //console.log(true);
-            //root.render();
-        }
-        var outFunc = function () {
-            box.setDisplayDOMREF(false);
-            //console.log(false);
-            //root.render();
-        }
-        btn.setHoverEvent(overFunc, outFunc);
+        });
         btn.attr["type"] = "button";
         btn.attr["style"] += tempStyle +
             "float: left;" +
             "";
-        btn.insert(box);
         return btn;
     })();
     var uploadButton = (function(){
@@ -1302,22 +1412,70 @@ var ProfileBox = function(name, avatar) {
             "";
         return btn;
     })();
-
+    var gearButton = (function () {
+        var pop = PopOver();
+        var btn = ButtonDiv("", () => {pop.toggleDisplayDOMREF()});
+        //console.log(pop);
+        pop.insert(followerButton);
+        pop.insert(settingsButton);
+        pop.insert(logoutButton);
+        pop.triangle.attr["style"] += "" +
+            "left: 22%;" +
+            "";
+        pop.attr["style"] += "" +
+            "overflow: ;" +
+            "position: absolute;" +
+            "top: 110%;" +
+            "left: -150%;" +
+            "background-color: #082D3F;" +
+            "width: 100px;;" +
+            "height: ;;" +
+            "margin-top: 6px;;"+
+            "";
+        btn.attr["style"] = "" +
+            "position: relative;" +
+            "top: -10px;" +
+            "display: inline;" +
+            "margin: 5px;" +
+            "" +
+            "float: right;" +
+            "width: 36px;" +
+            "height: 36px;" +
+            "padding: 0px;" +
+            "text-align: center;" +
+            "vertical-align: middle;" +
+            "line-height: 36px;" +
+            "background-color: #082D3F;" +
+            "color: #082D3F;;" +
+            "border-radius: 5px;" +
+            "font-weight: bold;" +
+            "font-size: 13.3333px;";
+        var icon = Photo("gearIcon.png", "24px", "24px");
+        icon.attr["style"] += "" +
+            "position: relative;;" +
+            "margin: auto;" +
+            "top: 15%;" +
+            "";
+        btn.insert(icon);
+        btn.insert(pop);
+        //btn.setHoverEvent(() => {}, pop.outFunc);
+        return btn;
+    })();
     var buttonContainer = (function () {
         var obj = component();
         obj.tag = "div";
         obj.insert(uploadButton);
-        obj.insert(logoutButton);
-        obj.insert(settingsButton);
-        obj.insert(searchButton);
+        obj.insert(gearButton);
+        obj.insert(searchBar);
         obj.attr["style"] += "" +
             "width: 56.5%;" +
             "float: right;" +
-            "padding-right: 10px;";
+            "padding-right: 10px;" +
+            "padding-top: 0px;" +
+            "";
 
         return obj;
     })();
-
 
     obj.insert(profilePicture);
     obj.insert(homeButton);
@@ -1342,7 +1500,7 @@ var SessionBox = function () {
         "box-sizing: border-box;" +
         "margin: 0 auto;" +
         "width: 100%; " +
-        "background: white;" +
+        "background-color: white;" +
         "top: 0px;;" +
         "border-width: 2px;" +
         "border-radius: 5px;" +
@@ -1351,6 +1509,7 @@ var SessionBox = function () {
         "border-color: 	#dbdbdb;" +
         "margin-bottom: 0px;" +
         "padding-right: 0px;" +
+        "" +
         ";";
 
     var emptyCleanup = function (result) {
@@ -1580,7 +1739,6 @@ var PhotoDetails = function (photoID) {
     obj.tar = {};
     obj.description = "";
     obj.descriptionBox = component();
-    obj.descriptionBox.attr["readonly"] = "readonly"
     obj.moment = "";
     obj.editMode = "On";
     obj.toggleEdit = function () {
@@ -1592,19 +1750,25 @@ var PhotoDetails = function (photoID) {
         }
     };
     obj.setEditOn = function () {
-        delete obj.descriptionBox.attr.readonly;
+        obj.descriptionBox.content = obj.description;
+        obj.descriptionBox.attr["contenteditable"] = "true";
         obj.descriptionBox.attr["style"] = "" +
             "outline: ;" +
+            "padding: 3px;" +
             "margin-top: 10px;" +
             "height: 70px;" +
             "font-size: 16px;" +
             "border-width: 1px;" +
+            "border-color: #dbdbdb;" +
+            "border-style: solid;" +
+            "border-radius: 5px;" +
             "resize: none;" +
-            "width: 95%;";
+            "width: 93%;";
         obj.editMode = "On";
     };
     obj.setEditOff = function () {
-        obj.descriptionBox.attr["readonly"] = "readonly";
+        obj.descriptionBox.content = formatForTags(obj.description);
+        obj.descriptionBox.attr["contenteditable"] = "false";
         obj.descriptionBox.attr["style"] = "" +
             "outline: none;" +
             "margin-top: 10px;" +
@@ -1625,7 +1789,7 @@ var PhotoDetails = function (photoID) {
             obj.description = obj.tar.description;
             obj.descriptionBox = (function(){
                 var txt = component();
-                txt.tag = "textarea";
+                txt.tag = "div";
                 txt.content = obj.description;
                 txt.attr["class"] = "PhotoDetailTextArea";
                 return txt;
@@ -1648,6 +1812,7 @@ var PhotoDetails = function (photoID) {
 
 var PhotoFrameFloatSingleton = function (_url, _photoID, _userID) {
     var obj = FrameFloatSingleton();
+    window.history.replaceState("", "", "?i=" + _photoID);
     var url = _url;
     var photoID = _photoID;
     var userID = _userID;
@@ -1687,14 +1852,15 @@ var PhotoFrameFloatSingleton = function (_url, _photoID, _userID) {
             else{
                 var ar = document.getElementsByClassName("PhotoDetailTextArea");
                 var d = ar[ar.length - 1];
-                photoDetails.description = d.value;
+                //console.log(d.innerText);
+                photoDetails.description = d.innerText;
                 var req = formatRequest({
                     "methodName" : "changePhotoInfo",
                     "photo_id" : photoID,
                     "description" : getEncode(photoDetails.description)
                 });
                 var callback = function (res) {
-                    console.log("res " + req + " = " + res.responseText);
+                    //console.log("res " + req + " = " + res.responseText);
                     photoDetails.updatePhotoDetails();
                     root.update();
                 };
@@ -2006,7 +2172,7 @@ var PhotoUploadFormSingleton = function () {
     return obj;
 };
 
-var SearchForm = function (searchResultBox) {
+var SearchForm = function (searchResultBox, searchTextValue = "") {
     var tempStyle = "display: block; margin-bottom: 10px; " +
         "padding: 5px;" +
         "height: 30px;" +
@@ -2023,7 +2189,6 @@ var SearchForm = function (searchResultBox) {
         "target" : "skipFrame",
         "style" : "margin: 0px auto;"
     };
-    var searchTextValue = "";
     var searchText = (function () {
         var obj = component();
         obj.tag = "input";
@@ -2041,22 +2206,35 @@ var SearchForm = function (searchResultBox) {
         };
         return obj;
     })();
-
-
-
-    var searchButton = (function () {
-        var btn = Button ("Search", function () {
-            searchTextValue = document.getElementById("genId" + searchText.genId).value;
-            var text = searchTextValue;
+    obj.searchFunc = function () {
+        var text = searchTextValue;
+        if (text.length == 0 || text[0] != '#') {
             var req = formatRequest({
-                "methodName" : "searchProfile",
-                "profile_name" : text,
+                "methodName": "searchProfile",
+                "profile_name": text,
             });
             var callback = function (res) {
                 var tar = JSON.parse(res.responseText);
-                searchResultBox.updateResult(tar.profile_list);
+                var result = {
+                    "type": "profile",
+                    "list": tar.profile_list,
+                }
+                searchResultBox.updateResult(result);
             };
             sendRequest("GET", req, callback);
+        }
+        else if (text.length >= 1 && text[0] == "#") {
+            var result = {
+                "type": "tag",
+                "name" : text,
+            };
+            searchResultBox.updateResult(result);
+        }
+    };
+    var searchButton = (function () {
+        var btn = Button ("Search", function () {
+            searchTextValue = document.getElementById("genId" + searchText.genId).value;
+            obj.searchFunc();
         });
         btn.attr["type"] = "button";
         btn.attr["style"] +="" +
@@ -2091,12 +2269,16 @@ var SearchForm = function (searchResultBox) {
         return obj;
     })();
     obj.insert(searchBoxContainer);
-
+    if(searchTextValue != ""){
+        obj.searchFunc();
+    }
     return obj;
 }
 
-var SearchFormSingleton = function () {
+var SearchFormSingleton = function (txt = "") {
     var obj = FrameFloatSingleton();
+    var sup = obj;
+    obj.setDisplay(false);
     var searchResultBox = (function () {
         var obj = component();
         obj.tag = "div";
@@ -2106,8 +2288,13 @@ var SearchFormSingleton = function () {
                 "font-size: 24px;" +
                 "font-family: sans-serif;" +
                 "float: left;" +
+                "margin: auto;" +
+                "left: 0;" +
+                "right: 0;" +
                 "width: 100%;" +
                 "height: 35px;" +
+                "text-align: center;" +
+                 +
                 "";
             return obj;
         })();
@@ -2119,31 +2306,39 @@ var SearchFormSingleton = function () {
                 "";
             return obj;
         })();
-        obj.updateResult = function (profileList) {
-            var newList = profileList.map(function (profile) {
-                var avatarBox = AvatarBox(profile.id, "64", "64");
-                avatarBox.attr["style"] += "" +
-                    "float: left;" +
-                    "margin: 15px;";
-                return avatarBox;
-            });
-            obj.reset();
-            obj.insert(resultLabel);
-            obj.insertAll(newList);
-            if(newList.length == 0){
-                obj.insert(emptyResultLabel);
+        obj.updateResult = function (result) {
+            if(result.type == "profile") {
+                var profileList = result.list;
+                var newList = profileList.map(function (profile) {
+                    return Follower(profile.id);
+                });
+                obj.reset();
+                obj.insert(resultLabel);
+                obj.insertAll(newList);
+                if (newList.length == 0) {
+                    obj.insert(emptyResultLabel);
+                }
+                sup.setDisplay(true);
+                root.update();
             }
-            root.update();
+            else if(result.type == "tag"){
+                stream.setTag("true", result.name);
+                stream.updateStream();
+                triggerEvent("FrameClose");
+            }
         };
         obj.insert(resultLabel);
         //obj.insert(emptyResultLabel);
         obj.attr["style"] += "" +
             "padding: 15px;" +
-            "";
+            "overflow: auto;" +
+            "height: 80%;"
         return obj;
     })();
-    obj.insert(SearchForm(searchResultBox));
+    obj.searchForm = SearchForm(searchResultBox, txt)
+    obj.insert(obj.searchForm);
     obj.insert(searchResultBox);
+    
     obj.attr["style"] += "" +
         "width: 800px;" +
         "height: 500px;" +
@@ -2165,6 +2360,258 @@ var SearchFormSingleton = function () {
 var PopOver = function () {
     var obj = component();
     obj.tag = "div";
-    
+    obj.triangle = (function () {
+        var tri = component();
+        tri.tag = "div";
+        tri.attr["style"] += "" +
+            "position: relative;" +
+            "top: -10px;" +
+            "margin: auto;" +
+            "left: 0%;" +
+            "right: 0%;" +
+            "width: 0px;" +
+            "height: 0px;" +
+            "border-left: 10px solid transparent;" +
+            "border-right: 10px solid transparent;" +
+            "border-bottom: 10px solid;" +
+            ";";
+        return tri;
+    })();
+    obj.insert(obj.triangle);
+    obj.attr["style"] += "" +
+        "border-radius: 5px;" +
+        "border-width: 0px;" +
+        "";
+    obj.setDisplay(false);
+    obj.overFunc = function () {
+        obj.setDisplayDOMREF(true);
+    };
+    obj.outFunc = function () {
+        obj.setDisplayDOMREF(false);
+    };
+
     return obj;
+}
+
+var ButtonDiv = function (txt, func = function () {}) {
+    var obj = Button(txt, func);
+    obj.tag = "div";
+
+    return obj;
+
+}
+
+var Follower = function (profileID) {
+    var followButton = (function (_profileID) {
+        var profileID = _profileID;
+        var btn = Button("Follow", function () {
+            var req = formatRequest({
+                "methodName": "toggleFollowProfile",
+                "profile_id": profileID,
+            });
+            var callback = function (res) {
+                btn.checkFollowing();
+            }
+            sendRequest("GET", req, callback);
+        });
+        btn.attr["style"] = "" +
+            "" +
+            "" +
+            "top: 50%;" +
+            "display: inline;" +
+            "width: 100px;" +
+            "height: 35px;" +
+            "float: right;" +
+            ";" +
+            ";" +
+            "font-weight: bold;" +
+            "font-family: sans-serif;";
+        var styleFollow = btn.attr["style"] + "" +
+            "background-color: #fff;" +
+            "border-style: solid;" +
+            "border-color: #3897f0;" +
+            "border-radius: 3px;" +
+            "color: #3897f0;";
+        var styleFollowing = btn.attr["style"] + "" +
+            "background-color: #70c050;" +
+            "border-style: solid;" +
+            "border-color: #70c050;" +
+            "border-radius: 3px;" +
+            "color: #fff;";
+        btn.checkFollowing = function () {
+            var req = formatRequest({
+                "methodName": "checkFollowProfile",
+                "profile_id": profileID,
+            });
+            var callback = function (res) {
+                var tar = JSON.parse(res.responseText);
+                if (tar.following == "true") {
+                    btn.content = "Following";
+                    btn.attr["style"] = styleFollowing;
+                }
+                else {
+                    btn.content = "Follow";
+                    btn.attr["style"] = styleFollow;
+                }
+                root.render();
+            }
+            sendRequest("GET", req, callback);
+        };
+        btn.checkFollowing();
+        btn.attr['type'] = "button";
+
+        return btn;
+    })(profileID);
+    var obj = (function (profileID) {
+        var obj = component();
+        obj.tag = "div";
+        var avatar = (function() {
+            var obj = AvatarBox(profileID, "64px", "64px");
+            obj.attr["style"] += "" +
+                "display: inline-flex;" +
+                "margin-bottom: 0px;" +
+                "";
+            obj.nameBox.attr["style"] += "" +
+                "font-size: ;" +
+                "";
+            return obj;
+        })();
+        var bio = (function () {
+            var obj = Label("");
+            obj.attr["style"] += "" +
+                "display: block;;" +
+                "font-size: 24px;" +
+                "margin: 20px;"
+            return obj;
+        })();
+        obj.attr["style"] += "" +
+            "margin: 0px auto; " +
+            "display: inline;" +
+            "height: 100%;"
+        obj.insert(avatar);
+        obj.insert(followButton);
+        obj.insert(bio);
+
+        return obj;
+    })(profileID);
+    return obj;
+}
+
+var FollowerListFrameFloatSingleton = function () {
+    var obj = FrameFloatSingleton();
+
+    var disp = (function () {
+        var obj = component();
+        obj.tag = "div";
+        obj.attr["style"] += "" +
+            "overflow: auto;" +
+            "height: 90%;" +
+            ""
+        return obj;
+    })();
+    disp.updateFollowingList = function () {
+        var req = formatRequest({
+            "methodName" : "getFollowing",
+        });
+        var callback = function (res) {
+            var tar = JSON.parse(res.responseText);
+            var followerList = tar.follower_list.map(function (x) {
+                return Follower(x.following_id);
+            });
+            disp.reset();
+            disp.insertAll(followerList);
+            root.render();
+        }
+        sendRequest("GET", req, callback);
+    };
+    disp.updateFollowerList = function () {
+        var req = formatRequest({
+            "methodName" : "getFollower",
+        });
+        var callback = function (res) {
+            var tar = JSON.parse(res.responseText);
+            var followerList = tar.follower_list.map(function (x) {
+                return Follower(x.follower_id);
+            });
+            disp.reset();
+            disp.insertAll(followerList);
+            root.render();
+        }
+        sendRequest("GET", req, callback);
+    };
+    disp.updateFollowerList();
+    var buttonBar = (function () {
+        var obj = component();
+        obj.tag = "div";
+        obj.attr["style"] += "" +
+            "text-align: center;" +
+            "margin: auto;" +
+            "left: 0;" +
+            "right: 0;" +
+            ""
+        return obj;
+    })();
+    var btn = Button();
+
+    buttonBar.followerButton = (function () {
+        var btn = Button("Followers", function () {
+            disp.updateFollowerList();
+            buttonBar.choose("Follower");
+        });
+        return btn;
+    })();
+    buttonBar.followingButton = (function () {
+        var btn = Button("Following", function () {
+            disp.updateFollowingList();
+            buttonBar.choose("Following");
+        });
+        return btn;
+    })();
+    buttonBar.choose = function (str) {
+        var styleBefore = btn.attr["style"] +
+            "display: inline;" +
+            "color: #082D3F;" +
+            "background-color: #fff;" +
+            "width: 100px;" +
+            "font-weight: bold;" +
+            "border-radius: 5px;" +
+            "height: 36px;" +
+            "";
+        var styleAfter = btn.attr["style"] +
+            "display: inline;" +
+            "color: #fff;" +
+            "background-color: #082D3F;" +
+            "width: 100px;" +
+            "font-weight: bold;" +
+            "border-radius: 5px;" +
+            "height: 36px;" +
+            "";
+        if(str == "Follower"){
+            buttonBar.followerButton.attr["style"] = styleAfter;
+            buttonBar.followingButton.attr["style"] = styleBefore;
+        }
+        else if(str == "Following"){
+            buttonBar.followingButton.attr["style"] = styleAfter;
+            buttonBar.followerButton.attr["style"] = styleBefore;
+        }
+    };
+    buttonBar.choose("Follower");
+    buttonBar.insert(buttonBar.followerButton);
+    buttonBar.insert(buttonBar.followingButton);
+    obj.insert(buttonBar);
+    obj.insert(disp);
+    obj.attr["style"] += "" +
+        "margin: auto;" +
+        "left: 0;" +
+        "right: 0;" +
+        "padding: 8px;" +
+        "height: 480px;" +
+        "top: 12%;" +
+        "width: 650px;";
+    return obj;
+};
+
+var tempRender = function () {
+    root.insert(FollowerListFrameFloatSingleton());
+    root.render();
 }

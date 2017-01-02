@@ -24,24 +24,52 @@
         return str_replace("'", "''", $str);
     }
 
+    function filterPhotoTags($str){
+        //$str = "Hello #world how are you "; //
+        $str .= " ";
+        $tags = array();
+        $buff = "";
+        $len = strlen($str);
+        for($i = 0; $i < $len; $i++){
+            $ch = substr($str, $i, 1);
+            if($ch == " "){
+                if(substr($buff, 0, 1) == "#"){
+                    $tags[] = $buff;
+                }
+
+                $buff = "";
+            }
+            else{
+                $buff .= $ch;
+            }
+        }
+
+        return $tags;
+    }
 
     function getPhotoAll(){
         $ar = [];
         $ar['photo_list'] = [];
+        $ar['last_update'] = -1;
         if(isset($_SESSION['user_id'])){
+            $lim_count = 1;
             $profile_id = $_SESSION['user_id'];
             if(isset($_GET['profile_id'])) $profile_id = $_GET['profile_id'];
+            if(isset($_GET['last_update'])) $lim_count = $_GET['last_update'] + 1;
+            $lim_size = 30;
+            $lim = $lim_count * $lim_size;
             $db = get_db();
             $sql = sprintf("
-                SELECT *
+                SELECT SQL_CALC_FOUND_ROWS *
                 FROM (photoowner JOIN users ON (photoowner.user_id = users.id))
                       JOIN photos ON (photoowner.photo_id = photos.id)
                 WHERE user_id=%s
-                ORDER BY photo_id DESC;
-            ", $profile_id);
+                ORDER BY photo_id DESC
+                LIMIT %s;
+            ", $profile_id, $lim);
             if($profile_id == "-1"){
                 $sql = sprintf("
-                  SELECT *
+                  SELECT SQL_CALC_FOUND_ROWS *
                   FROM (photoowner JOIN users ON (photoowner.user_id = users.id))
                       JOIN photos ON (photoowner.photo_id = photos.id)
                   WHERE user_id in (
@@ -50,8 +78,23 @@
                       WHERE follower_id=%s
                   )
                   ORDER BY photo_id DESC
-                  LIMIT 30;
-                ", $_SESSION['user_id']);
+                  LIMIT %s;
+                ", $_SESSION['user_id'], $lim);
+            }
+            if($_GET['typeTag'] == 'true'){
+                $tag_name = urldecode($_GET['tag_name']);
+                $sql = sprintf("
+                    SELECT SQL_CALC_FOUND_ROWS * 
+                    FROM photoowner JOIN users ON (photoowner.user_id = users.id) 
+                        JOIN photos ON (photoowner.photo_id = photos.id) 
+                    WHERE photo_id in ( 
+                        SELECT photo_id 
+                        FROM photoTags 
+                        WHERE tag_name like '%%%s%%'
+                    )
+                    LIMIT %s;
+                ", $tag_name, $lim);
+                //echo($sql);
             }
             $result = $db->query($sql);
             $list = [];
@@ -67,6 +110,15 @@
                 $list[] = $elem;
             }
             $ar['photo_list'] = $list;
+            $sql = sprintf("SELECT FOUND_ROWS() as cnt;");
+            $result = $db->query($sql);
+            $row = $result->fetch_assoc();
+            if($lim < $row['cnt']){
+                $ar['last_update'] = $lim_count;
+            }
+            else{
+                $ar['last_update'] = -1;
+            }
         }
         echo(json_encode($ar));
     }
@@ -149,6 +201,9 @@
     function changePhotoInfo(){
         if(isset($_SESSION['user_id']) && isset($_GET['photo_id']) && isset($_GET['description'])) {
             $db = get_db();
+            $description = urldecode($_GET['description']);
+            $txt =  sanitize($description);
+            echo($txt);
             $sql = sprintf("
                 UPDATE photos
                 SET description='%s'
@@ -157,8 +212,27 @@
                   FROM photoOwner
                   WHERE photo_id=%s AND user_id=%s
                 );
-            ", sanitize($_GET['description']), $_GET['photo_id'], $_SESSION['user_id']);
+            ", $txt, $_GET['photo_id'], $_SESSION['user_id']);
             $result = $db->query($sql);
+            if($db->affected_rows == 1) {
+                $sql = sprintf("
+                    DELETE
+                    FROM photoTags
+                    WHERE photo_id=%s;
+                ", $_GET['photo_id']);
+                $result = $db->query($sql);
+                $tags = filterPhotoTags($txt);
+
+                for ($i = 0; $i < sizeof($tags); $i++) {
+                    $sql = sprintf("
+                        INSERT 
+                        INTO photoTags(photo_id, tag_name)
+                        VALUES (%s, '%s');
+                    ", $_GET['photo_id'], $tags[$i]);
+
+                    $result = $db->query($sql);
+                }
+            }
         }
     }
 
@@ -181,7 +255,6 @@
                 $ar['id'] = $row['id'];
                 $ar['name'] = $row['name'];
                 $ar['email'] = $row['email'];
-                $ar['pass'] = $row['pass'];
                 $ar['avatar'] = $row['avatar'] . '.jpg';
             }
         }
@@ -243,10 +316,19 @@
             $db = get_db();
             $sql = sprintf("
                 UPDATE users
-                SET name='%s',email='%s',pass='%s'
+                SET name='%s',email='%s'
                 WHERE id=%d
-            ", $_POST['name'], $_POST['email'], $_POST['password'], $_SESSION['user_id']);
+            ", $_POST['name'], $_POST['email'], $_SESSION['user_id']);
             $result = $db->query($sql);
+            if(isset($_POST['password']) && $_POST['password'] != "") {
+                $sql = sprintf("
+                    UPDATE users
+                    SET pass='%s'
+                    WHERE id=%d
+                ", $_POST['password'], $_SESSION['user_id']);
+                $result = $db->query($sql);
+            }
+            print_r($_POST);
         }
     }
 
@@ -474,6 +556,32 @@
         echo (json_encode($ar));
     }
 
+    function searchTag(){
+        $ar = [];
+        if(isset($_GET['tag_name'])){
+            $_GET['tag_name'] = urldecode($_GET['tag_name']);
+            $db = get_db();
+            $sql = sprintf("
+                SELECT *
+                FROM photos
+                WHERE id in (
+                  SELECT photo_id
+                  FROM photoTags
+                  WHERE tag_name like '%%%s%%'
+                );
+            ", $_GET['tag_name']);
+            $result = $db->query($sql);
+            $list = array();
+            while($row = $result->fetch_assoc()){
+                $elem = array();
+                $elem["photo_id"] = $row["id"];
+                $list[] = $elem;
+            }
+            $ar["photo_list"] = $list;
+        }
+        echo(json_encode($ar));
+    }
+
     function deleteComment(){
         if(isset($_SESSION['user_id']) && isset($_GET['photo_id']) && isset($_GET['moment'])){
             $db = get_db();
@@ -483,8 +591,51 @@
                 WHERE user_id=%s AND photo_id=%s AND moment='%s';
             ", $_SESSION['user_id'], $_GET['photo_id'], $_GET['moment']);
             $result = $db->query($sql);
-            echo ($sql);
         }
+    }
+
+    function getFollowing(){
+        $ar = array();
+        if(isset($_SESSION['user_id'])){
+            $db = get_db();
+            $sql = sprintf("
+                SELECT *
+                FROM follows
+                WHERE follower_id=%s AND following_id!=%s;
+            ", $_SESSION['user_id'], $_SESSION['user_id']);
+            $result = $db->query($sql);
+            $list = array();
+            while($row = $result->fetch_assoc()){
+                $elem = array();
+                $elem['follower_id'] = $row['follower_id'];
+                $elem['following_id'] = $row['following_id'];
+                $list[] = $elem;
+            }
+            $ar['follower_list'] = $list;
+        }
+        echo json_encode($ar);
+    }
+
+    function getFollower(){
+        $ar = array();
+        if(isset($_SESSION['user_id'])){
+            $db = get_db();
+            $sql = sprintf("
+                    SELECT *
+                    FROM follows
+                    WHERE following_id=%s AND follower_id!=%s;
+                ", $_SESSION['user_id'], $_SESSION['user_id']);
+            $result = $db->query($sql);
+            $list = array();
+            while($row = $result->fetch_assoc()){
+                $elem = array();
+                $elem['follower_id'] = $row['follower_id'];
+                $elem['following_id'] = $row['following_id'];
+                $list[] = $elem;
+            }
+            $ar['follower_list'] = $list;
+        }
+        echo json_encode($ar);
     }
 
 ?>

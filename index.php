@@ -37,6 +37,7 @@
             width: 12px;
         }
     </style>
+    <title>CRT Project</title>
 </head>
 
 
