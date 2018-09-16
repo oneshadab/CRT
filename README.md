@@ -2,10 +2,12 @@
 
 An Instagram clone made as a single page javascript application.
 
-[Demo](http://crt.backslash.one)
-
 # Screenshot
 <img src="images/screencap.PNG">
+
+# Demo
+
+[Demo](http://crt-project.gear.host/)
 
 # Features
 * Upload and tag photos
